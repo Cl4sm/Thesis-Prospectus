@@ -1,0 +1,47 @@
+\begin{table*}[tb]
+	\centering
+	\small
+	%	\begin{adjustbox}{width=\textwidth}
+	\begin{tabular}{lr:rrrrr:rrrrr}
+		\hline
+		\textbf{Vendor}        & \textbf{Device}    & \multicolumn{5}{:c:}{\textbf{SaTC}} & \multicolumn{5}{:c}{\textbf{\toolname}}                                                                                                                                                              \\
+		                       &                    & \textbf{\trupoc}                    & \textbf{TP}                             & \textbf{Time} & \textbf{\trupoc Bins} & \textbf{Total Bins} & \textbf{\trupoc} & \textbf{TP} & \textbf{Time} & \textbf{\trupoc Bins} & \textbf{Total Bins} \\
+		\hline
+		Netgear                & R6400              &
+		\satcManFirstAlerts    & \satcManFirstTP    & \satcManFirstTime                   & \satcManFirstBins                       & 3             &
+		\mangoManFirstAlerts   & \mangoManFirstTP   & \mangoManFirstTime                  & \mangoManFirstBins                      & 76                                                                                                                                                         \\
+
+		Netgear                & R7000              &
+		\satcManSecondAlerts   & \satcManSecondTP   & \satcManSecondTime                  & \satcManSecondBins                      & 3             &
+		\mangoManSecondAlerts  & \mangoManSecondTP  & \mangoManSecondTime                 & \mangoManSecondBins                     & 85                                                                                                                                                         \\
+
+		Netgear                & XR300              &
+		\satcManThirdAlerts    & \satcManThirdTP    & \satcManThirdTime                   & \satcManThirdBins                       & 3             &
+		\mangoManThirdAlerts   & \mangoManThirdTP   & \mangoManThirdTime                  & \mangoManThirdBins                      & 65                                                                                                                                                         \\
+
+		D-Link                 & DIR878             &
+		\satcManFourthAlerts   & \satcManFourthTP   & \satcManFourthTime                  & \satcManFourthBins                      & 3             &
+		\mangoManFourthAlerts  & \mangoManFourthTP  & \mangoManFourthTime                 & \mangoManFourthBins                     & 40                                                                                                                                                         \\
+
+		Tenda                  & AC15               &
+		\satcManFifthAlerts    & \satcManFifthTP    & \satcManFifthTime                   & \satcManFifthBins                       & 3             &
+		\mangoManFifthAlerts   & \mangoManFifthTP   & \mangoManFifthTime                  & \mangoManFifthBins                      & 39                                                                                                                                                         \\
+
+		Tenda                  & AC18               &
+		\satcManSixthAlerts    & \satcManSixthTP    & \satcManSixthTime                   & \satcManSixthBins                       & 3             &
+		\mangoManSixthAlerts   & \mangoManSixthTP   & \mangoManSixthTime                  & \mangoManSixthBins                      & 39                                                                                                                                                         \\
+
+		Tenda                  & W20E               &
+		\satcManSeventhAlerts  & \satcManSeventhTP  & \satcManSeventhTime                 & \satcManSeventhBins                     & 3             &
+		\mangoManSeventhAlerts & \mangoManSeventhTP & \mangoManSeventhTime                & \mangoManSeventhBins                    & 35                                                                                                                                                         \\
+		\hline
+		Total                  & -                  &
+		\satcManTotalAlerts    & \satcManTotalTP    & \satcManTotalTime                   & \satcManTotalBins                       & 21            &
+		\mangoManTotalAlerts   & \mangoManTotalTP   & \mangoManTotalTime                  & \mangoManTotalBins                      & 389                                                                                                                                                        \\
+		\hline
+	\end{tabular}
+	%	\end{adjustbox}
+	\caption{Comparison of \satc and \toolname on \satcHandPickDataset. \textit{\trupoc Bins} are the amount of binaries with actual \trupoc{}s found.\\
+	}
+	\label{tab:mango_satc_manual}
+\end{table*}

@@ -1,0 +1,44 @@
+\begin{table}[tb]
+	\centering
+	\small
+	\resizebox{\textwidth}{!}{
+	\begin{tabular}{cr:rrrrrr:rrrrrr}
+			\hline
+			                        &                               & \multicolumn{6}{:c:}{\textbf{SaTC}} & \multicolumn{6}{:c}{\textbf{\toolname}}                                                                                        \\
+			\textbf{Vendor}         & \textbf{Samples}
+			                        & \textbf{Total}                & \textbf{Cmdi}                       & \textbf{Overflow}                       & \textbf{Total Time}           & \textbf{Analyzed Bins}       & \textbf{\trupoc{}ed Bins}
+			                        & \textbf{Total}                & \textbf{Cmdi}                       & \textbf{Overflow}                       & \textbf{Total Time}           & \textbf{Analyzed Bins}       & \textbf{\trupoc{}ed Bins} \\
+			\hline
+			Netgear                 & 17                            &
+			%1,901 & 537 & 285:19h  &  77 &
+			\satcCompNetgearAlerts  & \satcCompNetgearCmdInjAlerts  & \satcCompNetgearOverflowAlerts      & \satcCompNetgearTime                    & \satcCompNetgearAnalyzedBins  & \satcCompNetgearAlertedBins  &
+			\mangoCompNetgearAlerts & \mangoCompNetgearCmdInjAlerts & \mangoCompNetgearOverflowAlerts     & \mangoCompNetgearTime                   & \mangoCompNetgearAnalyzedBins & \mangoCompNetgearAlertedBins                         \\
+
+			D-Link                  & 9                             &
+			%32                      & 22                            & 16:03h                              & 24                                      &
+			\satcCompDLinkAlerts    & \satcCompDLinkCmdInjAlerts    & \satcCompDLinkOverflowAlerts        & \satcCompDLinkTime                      & \satcCompDLinkAnalyzedBins    & \satcCompDLinkAlertedBins    &
+			\mangoCompDLinkAlerts   & \mangoCompDLinkCmdInjAlerts   & \mangoCompDLinkOverflowAlerts       & \mangoCompDLinkTime                     & \mangoCompDLinkAnalyzedBins   & \mangoCompDLinkAlertedBins                           \\
+
+			TP-Link                 & 16                            &
+			%7                       & 2                             & 67:28h                              & 27                                      &
+			\satcCompTPLinkAlerts   & \satcCompTPLinkCmdInjAlerts   & \satcCompTPLinkOverflowAlerts       & \satcCompTPLinkTime                     & \satcCompTPLinkAnalyzedBins   & \satcCompTPLinkAlertedBins   &
+			\mangoCompTPLinkAlerts  & \mangoCompTPLinkCmdInjAlerts  & \mangoCompTPLinkOverflowAlerts      & \mangoCompTPLinkTime                    & \mangoCompTPLinkAnalyzedBins  & \mangoCompTPLinkAlertedBins                          \\
+
+			Tenda                   & 7                             &
+			%144                     & 122                           & 86:13h                              & 17                                      &
+			\satcCompTendaAlerts    & \satcCompTendaCmdInjAlerts    & \satcCompTendaOverflowAlerts        & \satcCompTendaTime                      & \satcCompTendaAnalyzedBins    & \satcCompTendaAlertedBins    &
+			\mangoCompTendaAlerts   & \mangoCompTendaCmdInjAlerts   & \mangoCompTendaOverflowAlerts       & \mangoCompTendaTime                     & \mangoCompTendaAnalyzedBins   & \mangoCompTendaAlertedBins                           \\
+			\hline
+			Total                   & 49                            &
+			%2,084                   & 683                           & 455:03h                             & 145                                     &
+			\satcCompTotalAlerts    & \satcCompTotalCmdInjAlerts    & \satcCompTotalOverflowAlerts        & \satcCompTotalTime                      & \satcCompTotalAnalyzedBins    & \satcCompTotalAlertedBins    &
+			\mangoCompTotalAlerts   & \mangoCompTotalCmdInjAlerts   & \mangoCompTotalOverflowAlerts       & \mangoCompTotalTime                     & \mangoCompTotalAnalyzedBins   & \mangoCompTotalAlertedBins                           \\
+			\hline
+		\end{tabular}
+	}
+	\caption{Comparison of SaTC and \toolname on \karonteDataset.
+		\textit{Analyzed Bins} are the amount of binaries \toolname analyzed while \textit{\trupoc{}ed Bins} are the amount of binaries with \trupoc{}s.
+		A subset of \trupoc{}s were manually analyzed for correctness, the results of which are shown in Table~\ref{tab:mango_manual}. \\
+	}
+	\label{tab:mango_satc}
+\end{table}

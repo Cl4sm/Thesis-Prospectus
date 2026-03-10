@@ -1,0 +1,72 @@
+% ============================================================
+%  CHAPTER 5: PROPOSED WORK
+% ============================================================
+\chapter{Proposed Work: Symbolic Execution on AIL}
+\label{ch:proposed}
+
+\section{Motivation}
+
+Chapters~\ref{ch:mango} and~\ref{ch:artiphishell} demonstrate 2 approaches to automated vulnerability discovery. They work. But they both hit the same wall from different directions.
+
+Mango's static analysis is fast and scales to hundreds of thousands of binaries, but it cannot reason about path feasibility. Rich Expressions track value transformations, not path conditions. If MangoDFA reports a source-to-sink flow, it has no way to determine whether the sequence of branches required to actually reach that sink with that tainted value is satisfiable. False positives result.
+
+Artiphishell's fuzzing is good at finding real crashes, but coverage is fundamentally limited by how effectively mutation explores the input space. Grammar-based fuzzing and LLM-guided seed generation help, but they cannot guarantee they will reach specific deeply-nested code paths that require precise input conditions.
+
+Symbolic execution sits between these two. It gives stronger feasibility guarantees than static analysis while covering more than random testing. The catch has always been path explosion. But if you already know \textit{which} paths to explore (because Mango told you), and you operate on a representation that carries recovered type information and structured control flow (because AIL provides that), the problem becomes much more tractable.
+
+\section{AIL Background}
+
+angr's pipeline involves multiple IRs. Native instructions lift to VEX IR (from Valgrind), which is architecture-independent but low-level. For decompilation, VEX IR translates to AIL (angr Intermediate Language), a higher-level representation with recovered types, structured control flow (loops, conditionals), and simplified memory access patterns.
+
+AIL is attractive for symbolic execution because:
+
+\begin{itemize}[nosep]
+  \item \textbf{Architecture independence.} One engine handles ARM, MIPS, x86.
+  \item \textbf{Type information.} Recovered types from the decompilation pipeline reduce ambiguity.
+  \item \textbf{Structured control flow.} Loops and conditionals are explicit, enabling smarter path exploration.
+  \item \textbf{Simpler memory model.} Memory accesses are closer to variable references than raw load/store operations.
+  \item \textbf{MangoDFA compatibility.} Mango is built on angr. AIL-based symbolic execution plugs directly into MangoDFA's results.
+\end{itemize}
+
+\section{Proposed Approach}
+
+Three research thrusts.
+
+\textbf{Thrust 1: AIL Symbolic Execution Engine.} Build a symbolic execution engine that operates on AIL instead of VEX IR. The engine will generate more precise SMT constraints (because AIL carries type info), implement path merging strategies that exploit AIL's structured control flow, and model memory with reduced ambiguity. It will be implemented as an angr plugin.
+
+\textbf{Thrust 2: MangoDFA Integration.} Wire the AIL symbolic executor into Mango's analysis pipeline as a second phase. Phase 1: MangoDFA identifies vulnerability candidates using Rich Expression-based analysis (fast, scalable, imprecise). Phase 2: the AIL symbolic executor performs targeted exploration of the vulnerability context paths MangoDFA found, determining path feasibility and generating concrete triggering inputs. This gets the best of both: Mango's scalability for the initial sweep, symbolic execution's precision for validation.
+
+\textbf{Thrust 3: Guided Symbolic Exploration.} Use insights from both Mango and Artiphishell to guide the symbolic executor. From Mango: vulnerability context paths provide starting points and target conditions. From Artiphishell: coverage data and crash analysis results can prioritize paths for symbolic exploration and seed the executor's initial state. This cross-pollination between all 3 projects is the connective tissue of the dissertation.
+
+\section{Preliminary Results}
+
+Preliminary work has established feasibility. A prototype performs basic block-level symbolic evaluation of AIL statements. Initial experiments on small binary functions show AIL-based symbolic execution generates 15--30\% fewer SMT constraints compared to equivalent VEX-based execution, because the simplified memory model and recovered types eliminate redundant constraints. This is encouraging, but the real test will be on full firmware binaries.
+
+\section{Expected Contributions}
+
+\begin{enumerate}[nosep]
+  \item The first symbolic execution engine targeting angr's AIL, demonstrating the benefits of operating at the decompilation IR level.
+  \item A hybrid static/symbolic framework combining MangoDFA with AIL-SE for vulnerability validation, achieving higher precision than either alone.
+  \item Empirical evaluation on firmware binaries, including head-to-head comparison with VEX-based symbolic execution and Mango's static-only analysis.
+  \item Integration strategies connecting symbolic execution with fuzzing, informed by Artiphishell's multi-agent architecture.
+\end{enumerate}
+
+\section{Timeline}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Period} & \textbf{Milestone} \\
+\midrule
+Months 1--3 & AIL symbolic execution engine prototype \\
+Months 4--6 & MangoDFA integration and hybrid analysis framework \\
+Months 7--9 & Evaluation on firmware benchmark datasets \\
+Months 10--12 & Guided exploration strategies; dissertation writing \\
+Month 13+ & Defense \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Plan for Defense}
+
+The dissertation will contain 3 technical contributions forming a coherent progression: scalable static analysis (Mango), autonomous AI-driven analysis (Artiphishell), and precise symbolic validation (AIL-SE). The defense presentation will cover all 3 projects in approximately 45 minutes, followed by committee questioning. Target defense date: [insert date].

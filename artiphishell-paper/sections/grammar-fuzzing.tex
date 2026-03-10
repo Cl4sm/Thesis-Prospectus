@@ -1,0 +1,351 @@
+\subsection{Grammar-based Fuzzing}
+
+\subsubsection{NAUTILUS integration and extensions}
+
+A large tenet of ARTIPHISHELL's bug-discovery pipeline is centered around grammar-based fuzzing. For ARTIPHISHELL we opted to build our tooling on top of the Nautilus-fuzzer. Nautilus supports two different grammar formats: a python representation and a JSON-based one. While the JSON-based format is more widely supported, e.g. by AFL++, atnwalk and others, we chose to build our tooling around the python representation of the grammar. The python format is advantageous in terms of the expressiveness of the grammars as well as the increased familiarity of Large Language Models with python.
+
+An example of both the JSON and a python grammar can be compared in Figure~\ref{fig:grammar-format-comparison}.
+%
+\begin{figure*}
+\centering
+\begin{tabular}{@{}p{0.48\textwidth}@{\hskip 15pt}p{0.48\textwidth}@{}}
+%
+\textbf{Nautilus JSON Format}
+\begin{minted}[fontsize=\footnotesize, baselinestretch=1.0, frame=single, framesep=3mm]{json}
+{ "rules": {
+    "START": [[{"NT": "HTML"}]],
+    "HTML": [
+      [ {"T": "<html>"},
+        {"NT": "HEAD"},
+        {"NT": "BODY"},
+        {"T": "</html>"}
+      ]],
+    "HEAD": [
+      [{"T": "<head>"},
+        {"NT": "TITLE"},
+        {"T": "</head>"}
+      ]],
+    "TITLE": [
+      [{"T": "<title>"},
+        {"NT": "TEXT"},
+        {"T": "</title>"}
+      ]],
+    "BODY": [
+      [{"T": "<body>"},
+        {"NT": "CONTENT"},
+        {"T": "</body>"}
+      ]],
+    "CONTENT": [
+      [{"NT": "PARAGRAPH"}],
+      [{"NT": "HEADING"}],
+      [{"NT": "PARAGRAPH"}, {"NT": "CONTENT"}]],
+    "HEADING": [
+      [{"T": "<h1>"},
+        {"NT": "TEXT"},
+        {"T": "</h1>"}
+      ]],
+    "PARAGRAPH": [
+      [{"T": "<p>"},
+        {"NT": "TEXT"},
+        {"T": "</p>"}
+      ]],
+    "TEXT": [
+      [{"T": "Hello World"}]
+    ]}}
+\end{minted}
+%
+&
+\textbf{Nautilus Python Format}
+\begin{minted}[fontsize=\footnotesize, baselinestretch=1.0, frame=single, framesep=3mm]{python}
+# Basic HTML Grammar
+ctx.rule("START", b"{HTML}")
+
+# HTML structure
+ctx.rule("HTML", b"<html>{HEAD}{BODY}</html>")
+
+# Head section
+ctx.rule("HEAD", b"<head>{TITLE}</head>")
+ctx.rule("TITLE", b"<title>{TEXT}</title>")
+
+# Body section
+ctx.rule("BODY", b"<body>{CONTENT}</body>")
+
+# Content alternatives
+ctx.rule("CONTENT", b"{PARAGRAPH}")
+ctx.rule("CONTENT", b"{HEADING}")
+ctx.rule("CONTENT", b"{PARAGRAPH}{CONTENT}")
+
+# Elements
+ctx.rule("HEADING", b"<h1>{TEXT}</h1>")
+ctx.rule("PARAGRAPH", b"<p>{TEXT}</p>")
+
+# Text content
+ctx.literal("TEXT", b"Hello World")
+\end{minted}
+%
+\end{tabular}
+\caption{Side-by-side comparison of Nautilus supported JSON and Python format for grammar representation}
+\label{fig:grammar-format-comparison}
+\end{figure*}
+%
+First, the python representation supports the definition of arbitray "producer"-functions in python. This allows the LLMs to both leverage their familiarity of writing python code as well as to bring to bear the full expressive power of the python standard library.
+This enables us to easily represent complex encodings, e.g., compression, base64, tar-archives and many more such common representations natively.
+These encoder functions allow the LLMs to understand and represent multi-layered file format encodings and build them into the grammars they write, while focusing the generative power of the grammar on the inner fields the application is finally parsing.
+
+We show an example grammar for a bug in the AIxCC organizer's Tika exemplar that makes use of this functionality to produce valid HTML pages with fully valid embedded and base64-encoded PNG images. (\TBD: fit the grammar from comment to text / appendix)
+%
+% Put the thing in the appendix. I don't know how else to make it look somehwhat acceptable
+%
+The version of Nautilus in ARTIPHISHELL was heavily customized and extended with the following additions:
+
+\paragraph{ANYRULE} rules allow the fuzzer to attempt to insert derivations from any rule in the grammar in place of the "correct" derivations according to the grammar structure.
+This extension breaks NAUTILUS' strict adherence to the grammar derivation tree in order to maximally use the coverage-guidance.
+Real-world file formats oftentimes reuse encodings, inner file structures and data sequences in multiple contexts.
+If the fuzzer finds that such a case leads to higher coverage, e.g., in an incomplete grammar written by an LLM, then ANYRULE-rules allow the fuzzer to further explore this embedded functionality everywhere in the target format.
+
+\paragraph{IMPORT} rules allow us to easily represent recursively nested file formats as they are commonly found in real-world file formats.
+Examples of this are, e.g. Microsoft Powerpoint documents which are zip-files containing multiple embedded XML documents and HTML documents that can directly embed various image file formats (PNG, JPEG, WEBP, etc.) and scripting language snippets.
+
+\paragraph{Binary encodings of common integer types} Binary file formats often contain packed integer fields.
+We have added native support for these encodings and added mutations that specifically operate on these fields to exploit this knowledge, e.g. increment, decrement, etc.
+
+\paragraph{Support for byte-mutations} Nautilus supports variable fields mainly via their support for regular-expression rules that describe the structure of the value being synthesized.
+These fields are not mutated, but instead generally regenerated from scratch each time, which prevents the fuzzer from incrementally discover internal structures.
+Our version of nautilus additionally supports arbitrary BYTES fields of given lengths and during mutation it uses traditional fuzzing mutations on the previous value instead of regenerating the value from scratch.
+This allows our NAUTILUS to discover internal file formats through repeated coverage-guided mutations.
+
+\subsubsection{Grammar-fuzzing in ARTIPHISHELL}
+
+The main components that perform and facilitate grammar-fuzzing in ARTIPHISHELL are:
+
+\newpar{Grammar[Guy/Agent/Roomba]} LLM agents that automatically write and augment grammars to cover as much code in the target application as possible.
+
+\newpar{Grammar-composer} Detects known file formats and encodings that are represented in a given full grammars as well as its internal sub-rules.
+If known file formats are discovered as likely matches, it will produce new grammars by splicing grammars from  our curated corpus of pre-written grammars into these grammars.
+This allows us to detect what format an LLM was attempting to represent in its rules and immediately expand the potential coverage reached by that grammar to include the full file format.
+Furthermore, it will also attempt to splice in custom "corpus-grammars" that allow our grammar-fuzzers to make use of our pre-loaded fuzzing corpora inside nested grammar structures.
+
+\newpar{\revolver} Custom mutator library used by our fuzzers to automatically synthesize and mutate seeds from multiple grammars at once.
+
+\newpar{Fuzzing: AFL and Jazzer} We have added configurations to our AFL and Jazzer configuration selections that incorporate grammar fuzzing. Any new fuzzing instance will have a certain probability of being selected as a grammar-fuzzing instance during launch (33\%).
+
+
+\newpar{\seedsync} Our seed syncing agent maintains both traditional fuzzing corpora as well as the synchronization of our grammar-fuzzing instances. This includes both the serialized derivation trees (RONs) as well as any newly discovered grammars.
+
+
+\subsubsection{Grammar Composer}
+
+While single-grammar fuzzing effectively explores individual format spaces, real-world vulnerabilities often hide at format boundaries where parsers handle nested data structures.
+Traditional fuzzers miss these bugs because they cannot adapt when encountering embedded formats -- such as Base64-encoded images within HTML or EXIF metadata within JPEGs.
+Our grammar composition system addresses this limitation through runtime detection and composition of grammar rules based on observed data patterns.
+
+The grammar composer operates by monitoring the fuzzer's output queue and identifying when grammar rules generate data resembling other known formats.
+It maintains a \textbf{fingerprint database} that tracks patterns in the data each grammar rule produces, using 64-bit bloom filters to efficiently detect recurring byte sequences.
+When a rule consistently generates data matching a known format (e.g., JPEG magic bytes appearing in Base64 output), the composer records this as a \textbf{composition opportunity}.
+
+Upon detecting such opportunities, the composer creates enhanced test cases by splicing the appropriate format grammar into the derivation tree.
+For instance, when HTML grammar rules produce Base64-encoded image data, the composer: (1) identifies the composition opportunity, (2) replaces the rule output with the full derivation tree (Base64-encoded) for the image, (3) updates the grammar rules accordingly, and (4) return the spliced test case to the fuzzer queue for further mutation.
+This process preserves the fuzzer's evolved test structure while exposing previously unreachable code paths.
+
+The system achieves this through four operations:
+
+\begin{itemize}
+\item \textit{Fingerprint collection}: Extracts 4-byte prefixes from rule outputs and updates bloom filters.
+
+\item \textit{Pattern detection}: Identifies format types via MIME detection (libmagic) or fingerprint matching against the reference fingerprint database.
+
+\item \textit{Tree splicing}: Replaces rule outputs with full derivation trees from the detected grammar, handling encoding transformations.
+
+\item \textit{Coverage filtering}: Executes both original and spliced variants, keeping only those that discover new code paths.
+\end{itemize}
+
+This pattern-recognition approach requires no semantic understanding or manual annotation, enabling fully automatic discovery of format nesting relationships during live fuzzing campaigns.
+
+
+\subsubsection{Grammar-guy}
+
+Grammar-guy's goal is to write grammars for any given target program by looking at the harness and deriving a Nautilus-compatible Python grammar from it. The grammar is then used to generate inputs, which are forwarded to Artiphishell's fuzzing components.
+To this end, we implemented a set of LLM-based agents that collaborate to perform source code analysis and gain an understanding of its structure and behavior. Based on this understanding, the agents build a grammar that represents the derived input structure and their corresponding data fields. The knowledge accrued in this process is stored and shared between the grammar components using the analysis graph.
+We initially developed Grammar-guy on top of Grammarinator \cite{grammarinator}, which uses ANTLR grammars for input generation. ANTLR grammars are however restricted in their ability to represent regular expressions, a limitation the LLM could not handle, leading to the generation of unsupported grammars. Consequentially, we made the decision to switch out input generation to Nautilus \cite{nautilus}, which supports both JSON and Python based grammar representations. After initially working with Nautilus's JSON representation, we adopted the more versatile Python format. This allowed Grammar-guy to generate grammars that contain comprehensive regular expressions and generally proved to be more flexible by also simplifying the expression of byte strings and other data through the possibility of outsourcing terminal data generation to helper functions.
+Consider the example initial grammar for the \verb|sqlite_rtree_tables_fuzzer| corresponding initial grammar proposed by Grammar-guy below:
+\TBD also put this in appendix?
+% Put in appendix aswell?
+% \begin{figure*}
+%  \begin{minted}[fontsize=\footnotesize, baselinestretch=1.0, frame=single, framesep=3mm]{python}
+% # Nautilus grammar for fuzzing the SQLite R*Tree harness with circle query support.
+% # This grammar generates input data for the harness, which expects a leading operation selector byte,
+% # followed by operation-specific binary data (floats and ints in little-endian format).
+% # The four operations are:
+% #   0: Insert (id:int, minX:float, maxX:float, minY:float, maxY:float)
+% #   1: Select (minX:float, maxX:float, minY:float, maxY:float)
+% #   2: Delete (id:int)
+% #   3: Select with circle (x:float, y:float, radius:float)
+% #
+% # The grammar maximizes coverage by generating all valid operation types and edge cases for numeric values.
+
+% # Entry point: one operation per input
+% ctx.rule("START", b"{OPERATION}")
+
+% # The first byte selects the operation (0=Insert, 1=Select, 2=Delete, 3=Circle Select)
+% ctx.rule("OPERATION", b"{OP_INSERT}")
+% ctx.rule("OPERATION", b"{OP_SELECT}")
+% ctx.rule("OPERATION", b"{OP_DELETE}")
+% ctx.rule("OPERATION", b"{OP_CIRCLE_SELECT}")
+
+% # Insert: 0x00 + id (int32) + minX (float32) + maxX (float32) + minY (float32) + maxY (float32)
+% ctx.rule("OP_INSERT", b"\x00{ID}{FLOAT}{FLOAT}{FLOAT}{FLOAT}")
+
+% # Select: 0x01 + minX (float32) + maxX (float32) + minY (float32) + maxY (float32)
+% ctx.rule("OP_SELECT", b"\x01{FLOAT}{FLOAT}{FLOAT}{FLOAT}")
+
+% # Delete: 0x02 + id (int32)
+% ctx.rule("OP_DELETE", b"\x02{ID}")
+
+% # Circle Select: 0x03 + x (float32) + y (float32) + radius (float32)
+% ctx.rule("OP_CIRCLE_SELECT", b"\x03{FLOAT}{FLOAT}{FLOAT}")
+
+% # ID: 4 bytes, signed int32, little-endian
+% def id_le_bytes(INTVAL: bytes) -> bytes:
+%     # INTVAL is 4 bytes, treat as little-endian int32
+%     return INTVAL
+
+% ctx.script("ID", ["INTVAL"], id_le_bytes)
+
+% # INTVAL: generate edge-case and random int32 values
+% def int32_edge_cases() -> bytes:
+%     import struct
+%     # Edge cases: 0, 1, -1, INT_MAX, INT_MIN, random
+%     cases = [
+%         0,
+%         1,
+%         -1,
+%         0x7fffffff,
+%         -0x80000000,
+%     ]
+%     import os
+%     # Add a random int32
+%     randval = int.from_bytes(os.urandom(4), "little", signed=True)
+%     cases.append(randval)
+%     # Pick one at random
+%     import random
+%     val = random.choice(cases)
+%     return struct.pack("<i", val)
+
+% ctx.script("INTVAL", [], int32_edge_cases)
+
+% # FLOAT: 4 bytes, IEEE754 float32, little-endian
+% def float32_edge_cases() -> bytes:
+%     import struct
+%     # Edge cases: 0.0, -0.0, 1.0, -1.0, inf, -inf, nan, FLT_MAX, FLT_MIN, random
+%     import math
+%     cases = [
+%         0.0,
+%         -0.0,
+%         1.0,
+%         -1.0,
+%         float("inf"),
+%         float("-inf"),
+%         float("nan"),
+%         3.4028235e+38,   # FLT_MAX
+%         -3.4028235e+38,  # -FLT_MAX
+%         1.17549435e-38,  # FLT_MIN (smallest positive normal)
+%         -1.17549435e-38, # -FLT_MIN
+%     ]
+%     import os
+%     # Add a random float32
+%     randval = struct.unpack("<f", os.urandom(4))[0]
+%     cases.append(randval)
+%     # Pick one at random
+%     import random
+%     val = random.choice(cases)
+%     return struct.pack("<f", val)
+
+% ctx.script("FLOAT", [], float32_edge_cases)
+% # BAZINGA
+% \end{minted}    
+% \end{figure*}
+% Cool initial grammar - problem : Harness and grammar are huge. I don't have logs for other initial grammars
+%
+After the initial grammar is generated, Grammar-guy goes through a fix/refinement phase. The agent passes the proposed grammar to the generator module of Nautilus, and collects a positive or negative format check. We extended the reporting capabilities of Nautilus to provide extra information so that the error description can be used to fix the grammar. Given the generators feedback, Grammar-guy tries to fix each grammar a limited number of times (e.g., 8). In case of failure, Grammar-guy discards the broken grammar and generates a new one from scratch, repeating the same process until a valid initial grammar is generated.
+
+Once the initial generation step yields a working grammar, Grammar-guy generates a set number of seeds (e.g., 200). For each seed, we  then execute the instrumented target to collect coverage information and a report of the accumulated coverage across all seeds, which allows Grammar-guy to determine the reachability of each generated grammar. We store retrieved coverage information in a data structure that associates the grammars with the achieved function coverage for later reuse.
+
+%We keep two data structures:
+%grammar_dict: key = func_name value=[grammar1, grammar2]
+%grammar_coverage: key = grammar value=[FunctionCoverageMap]
+
+Once a grammar has been successfully derived, coverage was collected and information about its reachability was stored, Grammar-guy enters an improvement loop that finishes after when one of two conditions is reached: a) the budget is exceeded and no new budget is scheduled (in this case, we stall indefinitely, waiting for new budget), b) the campaign is over and ARTIPHISHELL terminates Grammar-guy.
+For grammar improvement, Grammar-guy uses three different strategies:
+%
+\begin{enumerate}
+\item \textbf{random}: Grammar-guy selects a function that either (i) has not been reached or (ii) has been covered partially and tries to modify the grammar to reach into that function.
+\item \textbf{callable-pair}: Grammar-guy looks for functions that are already reached by the grammar and tries to call functions that are invoked from there. More precisely, Grammar-guy creates a list of pairs (caller, callee) and randomly selects one.
+The conditions for reaching the new functions are determined by invoking a specialized agent that inspects both the caller and callee and provides a detailed report on the conditions to reach the callee function.
+\item \textbf{extrapolation}: Grammar-guy takes a previously generated grammar and uses the LLM to identify key features encoded in the grammar as well as missing features that are currently not represented in the grammar. This step aims to leverage all of the LLM's internalized knowledge about the target format.
+\end{enumerate}
+%
+
+The new grammar is again validated and fixed if necessary. Valid grammars are again used to generate more seeds, which are serve to collect coverage and evaluate the reachability of the grammar in the program under test.
+
+When a newly generated grammar yields coverage on functions that were previously unseen (not just new parts of a function), Grammar-guy stores this information in the analysis graph, allowing other components to make use of it.
+In addition, the corresponding seeds are passed to the \seedsync agent.
+
+\subsubsection{Grammar-agent}
+
+Grammar-guy's partially randomized, semi-guided algorithm to expand coverage based on static reachability allows it to incrementally progress through the coverage space of the target application.
+
+However, LLMs are often able to bridge large gaps in coverage space based on the semantic meaning of a given function or other internalized knowledge about the program.
+For example, if given a harness that parses HTTP requests, LLMs can often directly one-shot grammars that are able to reach most parts of the header and body parsing logic due to their pretrained knowledge of the file format and valid fields. Furthermore, they are also often able to identify interesting functions that are likely reachable via the given harness based on the calling contexts and the names of these functions and knowledge that was learned during the training phase.
+As such, grammar-agent represents a component that performs fully LLM-guided exploration of the target application space.
+
+        At a high-level the grammar-agent maintains the following state throughout its execution:
+        
+        \begin{enumerate}
+        \item A set of "goal"-functions that the agent is attempting to reach. These can be added both by the agent itself as well as dynamically based on pipeline inputs.
+        For example, in delta-mode tasks we automatically initialize the goal functions list to contain all functions that were modified in the given diff.
+        Lastly, if the agent appears to not be making progress for extended periods of time, we will inject goal functions into the goals as well to attempt to divert the agent to discover other code.
+        
+        \item The full map of all files and functions covered by the agent so far, including the grammars that reached them.
+        Any newly discovered files and functions are provided as notifications to the agent to alert it that new coverage has been reached.
+        Furthermore, this allows the agent to fully identify the functions that were reached.
+        For example, if a function is defined in a C header file and included multiple times, the agent will receive the unique identifier for the exact function that was reached.
+        
+        \item All grammars that discovered previously unreached code.
+        When a grammar reaching new functions is discovered and added to this corpus, it is first uploaded to the analysis graph and linked to the nodes representing all the functions it reached.
+        Secondly, these grammars are also automatically distributed across the nodes in our CRS by the \seedsync agent for use by grammar-composer and the grammar-fuzzing instances via the revolver-mutator library.
+        
+        \item A limited set of LLM-written "memories" that the LLM can use to remember information permanently.
+        
+        \end{enumerate}
+        
+        The system prompt to the agent includes general instructions describing the task to write nautilus grammars to maximize the number of functions reached in the target application, as well as formatting instructions and best practices for good grammar writing.
+        The user prompt includes the harnesses available to the agent, the current state of the "goal report", as well as the current set of "memories" the LLM stored.
+        
+        Grammar-agent generally operates by exploring the code with source-reading tool-calls, maintaining its goal list by adding and giving up on goals, and testing its grammars by retrieving their coverage reports.
+        
+        \begin{itemize}
+            \item \textit{add\_goal\_function}: Adds a function by fuzzy-matching the LLM-provided identifier against the available indexed functions. If a unique matching identifier is found, this function is added to the goal functions and immutably added to the "Goal Report".
+            \item \textit{give\_up\_on\_goal}: Allows the agent to give up on a given function by providing a reasoning message describing why it believes the function to be unreachable. Generally this happens in case the agent repeatedly fails to reach a function.
+            \item \textit{goal\_report}: Retrieves an updated state of the goal report.
+            \item \textit{find\_function}: Retrieves the code of a given function via an LLM-provided identifier.
+            \item \textit{check\_grammar\_coverage}: The LLM provided nautilus grammar is used to produce N inputs (currently 20), whose coverage is then evaluated. The LLM also provides a list of "functions\_of\_interest" whose coverage reports are included in the response to the LLM. Lastly, if any new functions or files are reached, the corresponding notifications are returned as well.
+            \item \textit{remember}: A given memory is added to the list of memories maintained in the user-prompt.
+            \item \textit{grep\_sources}: Allows the LLM to provide an expression which is used to grep across the source code. The matching lines and file names are returned.
+            \item \textit{get\_file\_content}: Given a file path and a [start,end)-line-range, the corresponding lines of the file are returned.
+            \item \textit{get\_functions\_in\_file}: Return all indexed function identifiers in an LLM-provided file.
+            \item \textit{get\_function\_calls}: Given a function identifier, return all functions
+            \item \textit{get\_files\_in\_directory}: Given a directory path, return all files in the target source directory.
+        \end{itemize}
+
+\subsubsection{Grammaroomba}
+
+While the exploration components of our grammar-based fuzzing pipeline serve to improve general reachability, they tend to miss parts of functions that require more intricate grammar constructions. 
+To make up for this, we developed Grammaroomba, a local exploration agent that leverages information from the analysis graph to enhance grammars such that coverage in already hit functions is maximized.
+
+Grammaroomba waits for the analysis graph to be populated and then consults the analysis graph to retrieve previously hit functions and grammars associated with them. These pairs additionally come with function coverage information, allowing us to sort out functions that have already been fully covered. Grammaroomba then makes use of a multi factor code complexity ranking based on cyclomatic complexity, nesting depth, exception handling and more. We do so, to allow Grammaroomba to prioritize functions that are assumed to be more prone to security issues and hence have higher relevance for exploration. We select the highest ranked functions to be coverage optimized and explored further.
+
+Grammaroomba leverages the same tools and improvement strategies as Grammar-agent while restricting itself on exploring coverage in one function only. Grammaroomba is also constrained to a fixed amount of coverage runs before skipping over a function and moving on to the next. Other than Grammar-guy and Grammar-agent, Grammaroomba can decide to immediately drop functions without attempting to explore them even though they were selected for improvement by our ranking. The functions that were selected to be optimized are tracked within Grammaroomba to avoid redundant work and new information is retrieved from the analysis graph, ranked and added to the improvement queue in fixed intervals. 
+
+\subsubsection{\revolver}
+
+\revolver is a NAUTILUS-based mutator library exposed to AFL++ and Jazzer. Grammars are synced to fuzzers from other components, e.g., Grammar Guy, and ingested by \revolver to allow the fuzzers to mutate according to those grammars. Inputs to \revolver are serialized in the Rust Objection Notation (RON) format, which contain a grammar string, grammar hash, and a serialized representation of a Nautilus tree representing the structure of the rules in the tree and their values. A syncing component called Watchtower is used to watch for new grammars and produce RONs from the python grammar files, as well as to produce byte representation of new inputs and crashes found by a fuzzer. 

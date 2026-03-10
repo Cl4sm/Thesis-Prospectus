@@ -1,0 +1,20 @@
+\begin{table}[tb]
+  \centering
+  \small
+  \resizebox{\textwidth}{!}{
+  \begin{tabular}{c:c:c:r:r:r:r:r}
+    \hline
+                             & \textbf{Assumed}   & \textbf{Source-To-} & \textbf{Average Per}      & \textbf{Total}     &                     &            &                \\
+    \textbf{Firmware}        & \textbf{Execution} & \textbf{Sink}       & \textbf{Binary (minutes)} & \textbf{(minutes)} & \textbf{\trupoc{}s} &
+    \textbf{TP}              & \textbf{Errors}                                                                                                                               \\
+    \hline
+    \multirow{4}{*}{R6400v2} & \gtick             & \gtick              & \defaultAverage           & \defaultTotalTime      & \defaultAlerts      & \defaultTP & \defaultErrors \\
+                             & \rcross            & \gtick              & \traceAverage             & \traceTotalTime        & \traceAlerts        & \traceTP   & \traceErrors   \\
+                             & \gtick             & \rcross             & \assumedAverage           & \assumedTotalTime      & \assumedAlerts      & \assumedTP & \assumedErrors \\
+                             & \rcross            & \rcross             & \allAverage               & \allTotalTime          & \allAlerts          & \allTP     & \allErrors     \\
+    \hline
+  \end{tabular}
+  }
+  \caption{Results of the ablation study where four different configurations of \mango are evaluated on R6400v2 firmware.}
+  \label{table:ablation}
+\end{table}

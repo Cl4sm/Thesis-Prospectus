@@ -1,0 +1,50 @@
+\section{\assumed}
+\label{sec:assumed_execution}
+
+Traditional inter-function data-flow analysis cannot effectively analyze firmware at scale.
+One fundamental problem is that forward inter-function data-flow analysis usually must enter and analyze every callee; otherwise, it misses the artifacts that the callee generates.
+However, consider well-formed C programs where functions all have clean input/output interfaces and are defined by their arguments and return variables: in this case, we may safely skip the analysis of certain callees if pointers to the values and variables that we care about are not passed into these functions.
+Skipping these callees means that we can consider them a black-box, and that we cannot capture any information inside them.
+This is acceptable because \rda only cares about the effects that would impact the values that are being tracked.
+
+Therefore, we propose \emph{\assumed}, a best-effort execution strategy for function callees during data-flow analysis.
+Selectively analyzing callees significantly reduces the analysis time of \rda.
+
+\input{assets/algorithms/assumed_exec}
+
+Algorithm~\ref{alg:assumed-exec} describes the process of \assumed.
+When \rda analyzes a new function $A$, it recovers calling convention, prototype, and accessed global variables for each callee that $A$ calls.
+With calling conventions and prototypes of callees, \rda has enough information to determine, at every call site, if (1) any pointer that points to values and variables that \rda tracks is passed to the callee function, or (2) any values that the callee function returns and is ultimately used by the sink in some form.
+When neither situation holds, we assume the call will not impact the values and variables that \rda tracks and skip the call.
+
+TChecker~\cite{luo2022tchecker} discusses a similar technique to \assumed.
+The novelty in \mango lies in adapting the technique for binaries, whereas TChecker only works on PHP applications.
+Achieving this in binaries is significantly more challenging compared to PHP source code because high-level semantic information, such as data structures, are discarded during compilation.
+Additionally, analyzing binary code requires reasoning about binary-specific features such as calling conventions, function prototypes, and precisely tracking data flows.
+Further, \mango works on binaries of multiple architectures, each with nuances, further increasing the difficulty.
+% Every function call along the way has its parameters and return values tagged to properly determine the data flows.
+% These data flows generate a directed graph of dependencies.
+% At the reached call-depth or sink, the generated dependency graph is crawled in reverse starting from the reached function's parameters.
+% Any function with a parameter or return-value corresponding to a data dependency for the sink function is added to a white-list of functions.
+% The function that is highest in the call-graph of the analyzed parent function is chosen as the analysis resume point.
+
+While \rda caches the calling conventions and prototypes for callee functions, it must determine whether to skip a call at each call site.
+The decision to skip a callsite depends on the value of the arguments to the callee and if those values are mutable as \rda progresses, making the decision heavily dependent on the context of the call.
+
+% Once a white-list is built and the analysis resumes, only functions belonging to the white-list are analyzed.
+% If the function is a known handled function, it's handler is executed in its place.
+% If the function is implemented in the binary being analyzed, then we run our assumed execution analysis on this sub-function.
+% However, these sub-functions are not part of our original analysis path, meaning there is no function to use as our dependency sink.
+% In these cases, we use the sub-function's return value as the starting point for our reverse dependency graph analysis and analyze any function it depends on.
+% Though infinitely allowing sub-function analysis would certainly increase the precision of the analysis, we cannot allow this due to time and memory constraints.
+% As such, we limit this type of recursive analysis to a call-depth of 3 from whichever parent function it originated from.
+
+
+\smallskip
+\noindent
+\textbf{Loss of soundness.}
+The fundamental assumptions underpinning \assumed are that (1) all callees are well-formed (i.e., they will not add a constant to the stack pointer and use it to overwrite values that belong to the caller's stack frame) and (2) all recovered calling conventions, prototypes, and accesses to global variables are accurate.
+These assumptions do not always hold for stripped binaries, especially when structs (not pointers to structs) are in use, where \rda frequently recovers incorrect calling conventions and prototypes.
+Another error source is global struct member accesses, where it is difficult to determine the size of global structures, leading to incorrect assumptions of what ranges of data a callee function may access.
+Our evaluation shows that \assumed works well in most cases, and we hope future advances in binary analysis research will alleviate these issues and reduce the loss of soundness.
+

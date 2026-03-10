@@ -1,0 +1,67 @@
+\section{\rda}
+\label{sec:rda}
+
+The core static data-flow analysis is \rda, which is a combination of a static value analysis that tracks all possible values for each variable (in binary analysis, variables refer to value containers, such as registers, memory cells, etc.) at each program location and a data dependency analysis that tracks where each value is defined and used.
+This is a critical difference from prior work:
+Both \karonte and \satc use taint-tracking, which means they can only mark certain variables and values as \emph{tainted} by input data or not.
+In comparison, \rda creates def-use graphs, with which \mango can reason about how any value was created from its source values and what operations have been applied.
+We call these expressions \emph{\richexprs} because they capture not only the concrete values but also rich information about their history and dependencies.
+
+An example \richexpr is: \texttt{"df -d " .. itoa(atoi(input\_1)) .. " -h " .. input\_0)} where ``\texttt{..}'' represents the string concatenation operation.
+In this case, the underlying \richexpr can be broken into its 4 components, \texttt{"df -d "}, \texttt{itoa(atoi(input\_1))}, \texttt{" -h "}, and \texttt{input\_0}, at any time with their corresponding dependencies already held in a global dependency graph.
+% Figure~\ref{fig:richexpr} illustrates the difference between \mango and taint-analysis-based solutions.
+If a call to \texttt{system()} has a \richexpr as the first argument (such as the one described), \mango can determine that \texttt{input\_1} does not lead to arbitrary command injection as its value was derived from an integer. 
+In contrast, \texttt{input\_0} may lead to a command injection vulnerability as its origin value is unhindered.
+Neither \karonte nor \satc could determine that \texttt{input\_1} would not contribute to a vulnerability, which leads to higher false positive rates and reduced analysis speed due to over-tainting.
+
+\rda is the foundation for various sub-analyses on which \mango depends, such as calling convention inference and function prototype inference.
+    \mango uses calling convention inference to determine the ABI of each function, which can be different even for functions within the same binary.
+    \mango further uses function prototype inference to determine the number and the sizes of arguments for each function and if there is a return value.
+    Both types of information are necessary for inter-function analysis.
+    These sub-analyses are purely engineering work of existing research~\cite{balakrishnan2004analyzing,zhang2007parameter} and are not our scientific contributions in this paper.
+
+\subsection{\rda Basics}
+
+\noindent
+\textbf{Value domain.}
+\rda employs a value domain that is specifically designed for finding command injection vulnerabilities.
+Basic value types in this domain include bit-vectors (integers and strings with fixed lengths) and a TOP ($\top$) value.
+Each value in this domain is either a \emph{MultiValue} that contains at most $N$ bit-vector values, a $\top$ value, or an \emph{Expression} that is composed of \emph{operations} that are applied on MultiValues.
+Each instance of MultiValue and Expression is of a fixed number of bits.
+\rda is flow-sensitive but not path-sensitive, which means that whenever multiple paths merge, the values in each variable will be merged, creating MultiValues with more than one basic value inside.
+A MultiValue with more than $N$ bit-vectors becomes a $\top$, and overly deep expressions (we empirically limit it to 20) also become $\top$.
+We choose a small $N$ ($N=5$) to guarantee fast convergence of the data-flow analysis.
+
+\smallskip
+\noindent
+\textbf{Data dependency tracking.}
+The data dependency analysis in \rda is similar to traditional, source-code-based data dependency analysis:
+\rda tracks where each variable is first defined and keeps a separate record for program locations where each defined variable is used.
+The definition record is associated with each value (bit-vectors or $\top$ values).
+During path merging, \rda will adjust the association of definition records and re-associate definition records of old values to newly created $\top$ values if needed.
+
+\smallskip
+\noindent
+\textbf{Memory model.}
+The abstract state used in \rda models ``loads from'' and ``stores into'' for registers, global memory regions, stack regions, and heap locations in a bit-precise manner.
+Because \rda performs intra-function analysis by default, it only models one stack frame (also known as activation record).
+
+\subsection{Inter-function Analysis}
+To resolve sinks, \mango requires inter-function analysis.
+Building an inter-function \rda from an intra-function \rda is straightforward.
+At every call site, \mango makes a copy of the abstract analysis state thus far, creates a new stack frame to simulate the call, invokes a new \rda on the copy of the abstract state, and then waits until the new \rda instance terminates.
+Then, \mango merges all exit states that the new \rda yields to get a new output state and uses that state to resume the outer-level \rda analysis.
+
+\subsection{Function Summaries}
+\label{sec:function_handlers}
+
+The more accurately \rda models the execution of a binary, the higher level of precision \mango can achieve.
+% Interestingly, while both \karonte and \satc model multi-binary interactions, they do not model the exact execution artifacts of said binary's libraries, which include libc.
+\karonte and \satc are based on taint tracking, which models dependency relationships between input arguments and output values of certain library functions.
+Precisely propagating taints through many library functions (especially in \texttt{glibc}) can be difficult due to the complexity of the logic and implementations of these library functions, which may lead to excessive amounts of false positives and false negatives.
+Therefore, \mango implements function summaries for common library functions to ensure that values and data dependencies are modeled as accurately as possible.
+
+Re-implementing library functions has the added benefit of reducing false positives caused by changes in value types.
+It is a common and normal execution pattern for programs to manipulate strings into non-injectable forms, such as using \texttt{atoi} to transfer the string into an integer or the \texttt{"\%d"} format specifier for the \texttt{printf} function family, making injections impossible.
+\satc does not recognize these input type changes and will report a (false-positive) vulnerability even if the tainted value is not injectable.
+%Without proper value modeling it is easy to over-taint tracked values.

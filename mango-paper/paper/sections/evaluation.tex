@@ -1,0 +1,171 @@
+\externaldocument{assets/tables/mango_vs_satc}
+\section{Evaluation}
+\label{sec:evaluation}
+
+We evaluated \mango using firmware running on real-world routers to answer the following research questions:
+\smallskip
+
+\noindent
+\textbf{RQ1.}
+How effective and efficient is \mango compared to \satc at identifying vulnerabilities on real-world firmware?
+
+\noindent
+\textbf{RQ2.}
+How do the scalability optimizations \rev and \assumed impact scalability and precision?
+
+\noindent
+\textbf{RQ3.}
+How does \mango perform on a significantly large-scale dataset of firmware (100$\times$ larger than what was used in prior work)?
+
+\subsection{Datasets}
+We evaluate \mango on three different firmware datasets.
+
+\smallskip
+\noindent
+\emph{\karonteDataset.}
+The \karonteDataset\footnote{\url{https://github.com/ucsb-seclab/karonte\#dataset}} contains 49 firmware samples across four different vendors (Netgear, D-Link, TP-Link, and Tenda).
+There are \mangoCompTotalAnalyzedBins binaries in all of these firmware samples.
+
+\smallskip
+\noindent
+\emph{\satcHandPickDataset.}
+\satc also compared against \karonte on seven additional firmware images from Netgear, D-Link, and Tenda.
+As such, we will compare against \satc on these seven additional images containing \satcManTotalBinAmount binaries in total.
+
+\smallskip
+\noindent
+\emph{\largeScaleDataset.}
+We use the dataset that Greenhouse uses~\cite{greenhouse}.
+This dataset comprises \ldsize firmware samples from nine different vendors: Netgear, Asus, Belkin, Linksys, TPlink, Trendnet, Tenda, D-Link, and ZyXEL containing over 385,000 binaries.
+
+\subsection{Methodology}
+\label{sec:eval-methodology}
+
+For every dataset, we run \mango on each ELF binary in the firmware sample that contains a vulnerability sink.
+% Due to resource constraints, we do not re-run \satc, and instead use the numbers from the \satc paper.
+In this evaluation, we only compare against \satc and not \karonte as \satc strictly improves upon the amount of vulnerabilities found per firmware image compared to \karonte.
+
+\subsubsection{Vulnerability Confirmation}
+
+Where possible, we manually analyze a subset of \mango's \trupoc{}s to determine which are true positives (actual vulnerabilities) and which are false positives (not vulnerable).
+The \trupoc{}s are considered true positives if an attacker in our threat model (Section~\ref{sec:threat_model}) can exploit the vulnerability as a user connected to the device with credentials.
+We have generated PoCs and successfully exploited \MangoPoCnum vulnerabilities based on our \trupoc{}s.
+We are working with vendors to responsibly disclose these vulnerabilities.
+
+\subsection{\karonteDataset Results}
+\input{assets/tables/mango_vs_satc}
+Table~\ref{tab:mango_satc} shows the results of \mango and \satc on the \karonteDataset.
+After analyzing \mangoCompTotalAnalyzedBins binaries over \mangoCompTotalTimeHours hours, \mango generated \mangoCompTotalAlerts \trupoc{}s.
+This compares to \satc analyzing \satcAnalyzedBinaries binaries in \satcCompTotalTimeHours hours and generated \satcCompTotalAlerts \trupoc{}s.
+
+\toolname achieves comparative speeds to \satc despite analyzing \mangoKaronteBinaries binaries vs \satc's analysis of \satcAnalyzedBinaries binaries.
+The speed of our analysis, despite the scope of our threat model, is attributed to our contributions of \assumed and \rev optimizations (demonstrated through an ablation study in Section~\ref{sec:ablation}).
+%\todo[inline]{table showing time spent analyzing bdg bins in satc vs mango}
+
+To better understand \mango{}'s effectiveness, we manually analyzed a subset of the generated \trupoc{}s.
+Table~\ref{tab:mango_manual} shows the results of our manual analysis.
+We randomly sampled \manualAnalysisCmdInjTotal  \mango command injection \trupoc{}s and manually verified them.
+\manualAnalysisCmdInjTrueTP were true positives, with a \manualAnalysisCmdInjTPRatio true positive rate, \manualAnalysisCmdInjTrueFP were false positives, with a \manualAnalysisCmdInjFPRatio false positive rate.
+With the addition of \trupoc{}s, \mango's \manualAnalysisCmdInjTPRatio true positive rate is higher than \satc's at 32.77\%.
+
+We also randomly sampled \manualAnalysisOverflowTotal \mango buffer overflow \trupoc{}s and verified them.
+\mango found \manualAnalysisOverflowTrueTP and \manualAnalysisOverflowTrueFP, giving it a true positive rate of \manualAnalysisOverflowTPRatio.
+
+Our manual analysis of the buffer overflow results found several cases where \mango identified a vulnerability that \karonte or \satc could not (due to their reliance on the Binary Dependence Graph).
+Our motivating example (Listing~\ref{dlnad_vuln}) showcases this exact issue.
+
+%\begin{code}
+%    \caption{A buffer-overflow caused by a form parameter \texttt{email\_smtp} which eventually is triggered in the \textit{email} binary.}
+%    \label{case_study:email-overflow}
+%    \inputminted[
+%        frame=lines,
+%        fontsize=\footnotesize,
+%        linenos,
+%        breaklines
+%    ]{c}{assets/code/email.c}
+%\end{code}
+
+\subsubsection{Baseline Comparison}
+\label{sec:baseline}
+\input{assets/tables/sink_occurences}
+
+Taint-style vulnerability analysis is usually paired with the inherent worry of whether the analysis itself has any effect---with the level of vulnerabilities that we identify, would a na\"{\i}ve approach to generate a \trupoc on any vulnerable sink function call be just as effective?
+To answer this question, we designed a na\"{\i}ve baseline approach.
+
+The baseline approach marks every vulnerable sink function call as a potential vulnerability.
+However, the user's effort does not stop there, as they must verify the vulnerabilities by analyzing the context of the vulnerable sink function call.
+Therefore, a fair comparison is the \trupoc{}s generated by \mango compared to the number of context paths backward from a vulnerable sink function call.
+We limit the depth of the backward context traversal to 7, mimicking how far back \mango will go to find unique path contexts.
+
+Table~\ref{table:sinks} shows the results of this comparison for the command injection \mango \trupoc{}s and vulnerable context paths and the same for buffer overflows.
+\mango significantly reduces the burden on the human analyst by reducing the number of vulnerable context paths they need to reason about from \contextOverflow to \alertedOverflow for buffer overflows and \contextCmdi to \alertedCmdi for command injections.
+
+
+\subsection{\satcHandPickDataset Results}
+\label{sec:focused_eval}
+\input{assets/tables/mango_vs_satc_manual.tex}
+
+\satc evaluated their tool against 7 selected firmware, and on these firmware, \karonte produced zero true positives.
+We evaluated \mango against these same firmware images, and to do so fairly, we evaluated only on command injections just as \satc did in their foundational work.
+Table~\ref{tab:mango_satc_manual} shows the results of this experiment.
+
+\mango analyzed \satcManTotalBinAmount binaries in \mangoManTotalTimeHours hours and generated \mangoManTotalAlerts \trupoc{}s, while \satc analyzed 21 binaries in \satcManTotalTimeHours hours and generated \satcManTotalAlerts \trupoc{}s.
+\mango generated a total of \mangoManTotalTP (61\%) true positive \trupoc{}s versus \satc's \satcManTotalTP (55\%).
+In addition to more than doubling \satc's true positive \trupoc{}s, \mango also ran 90\% faster than \satc.
+% \input{assets/tables/alerted_binaries.tex}
+
+\mango generated \mangoManTotalAlerts command inject \trupoc{}s from \mangoManTotalBins binaries whereas \satc's \satcManTotalAlerts originate from \satcManTotalBins binaries.
+There is an overlap of \satcManTotalBins binaries between \mango and \satc for these seven selected firmware.
+Therefore, the \trupoc{}s generated by the other 18 binaries that \mango found are false negatives for \satc.
+However, \satc found 11 \trupoc{}s in the seven firmware for which \mango did not generate a \trupoc, resulting in a few false negatives for \mango.
+Despite this, the reduced analysis scope induced by the Binary Dependence Graph technique introduces significant false negatives.
+\input{assets/tables/mango_manual}
+
+
+
+\subsection{Ablation Study}
+\label{sec:ablation}
+
+\input{assets/tables/ablation}
+To answer RQ2, we evaluated \toolname on the Netgear firmware \ablationFirmware and measured the impact of \assumed and \rev.
+All runs were done on the exact same set of binaries, and the times reported are only on binaries that were ran successfully across all options.
+As a baseline, we ran \toolname normally, enabling both \assumed and \rev.
+
+Table~\ref{table:ablation} shows the results of this analysis on the \ablationSampleBins binaries in the firmware for command injection sinks.
+\mango achieved an average execution speed of \defaultAverageMin minutes per binary and an overall run-time of \defaultTotal minutes.
+
+\subsubsection{Disabling \assumed}
+
+Theoretically, \assumed allows \mango to run faster by analyzing fewer paths and functions along the way to our sink.
+With only \assumed disabled, i.e., analyzing every path and function in-line to the sink, the runtime is \assumedTotal minutes with an average of \assumedAverageMin minutes spent on each binary.
+Thus, \assumed provided a speed increase of \assumedPercentage.
+It should be noted that \assumed also generates more \trupoc{}s and true positives than \mango without \assumed.
+
+\subsubsection{Disabling \rev}
+
+We conducted a similar analysis by disabling \rev.
+This forward tracing approach results in a decrease in speed against our \rev.
+The average runtime of a binary is \traceAverageMin minutes with a total of \traceTotal minutes.
+Enabling \rev results in a speed increase of \tracePercentage.
+This is notably faster than default \mango and generates many more \trupoc{}s and true positives.
+
+\subsubsection{Disabling Both Optimizations}
+Finally, we evaluated our approach against the standard taint approach by disabling both \assumed and \rev.
+Without these optimizations, the average time taken to analyze a binary was \allAverageMin minutes, and it took \allTotal minutes to analyze the given firmware.
+
+The number of \trupoc{}s generated for this approach is much lower than our approach of using both \assumed and \rev.
+To analyze all context sensitive paths in a timely manner, we place a timeout of six minutes on individual Sink-to-Source path analysis.
+There can be hundreds if not thousands of paths from all sinks that need to be analyzed (as Section~\ref{sec:baseline} shows).
+We used \rev to find the highest common call-depth for triggering bugs, which distills the shortest unique path to each sink.
+
+\subsection{\largeScaleDataset Results}
+
+\input{assets/tables/mango_greenhouse}
+
+The \largeScaleDataset consists of largely ARM and MIPS based router firmware in addition to some NAS firmware.
+We performed the evaluation on a Kubernetes cluster composed of 2.30GHz Intel Xeon CPUs, with each process running strictly on one core and at least 5GB of RAM allocated per binary.
+
+Table~\ref{tab:mango_largescale} shows the results, and \mango analyzed \greenhouseTotalTotal binaries, generating \greenhouseTotalAlerts \trupoc{}s over a total CPU time of \greenhouseTotalTime.
+% However, \toolname's approach is highly parallelized resulting in a significantly lower real-world analysis time.
+On average, \mango only took \greenhouseTotalAVGBinTime to fully analyze a binary and \greenhouseTotalAVGTime to analyze any individual firmware.
+This time per firmware is much lower than the results reported by either \satc or \karonte.

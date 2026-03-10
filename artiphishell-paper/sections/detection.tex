@@ -1,0 +1,33 @@
+\section{Vulnerability Identification}
+\label{detection}
+
+The task of identifying inputs that trigger sanitizers is carried out mostly using dynamic analysis techniques.
+This is largely dictated by the structure of the competition, since the targets are provided in OSS-Fuzz format with specific harnesses to access the application functionality.
+
+At a high level, there are a number of fuzzers that operate in different ways: The \afluzzer agent uses a custom version of the AFL++ tool~\cite{aflplusplus} to fuzz a C/C++ application; The \jazzmine agent uses a custom version of the Jazzer tool~\cite{jazzer} to fuzz a Java application.
+
+In addition, there is a grammar-focused agent, called \grammarguy, whose task is to develop grammars that can be used to generate input seeds that conform to specific formats.
+
+Finally, there is an agent, called \quickseed, who uses LLM-based reasoning to produce interesting inputs for a harness.
+
+Every agent that can produce interesting seeds (i.e., both the fuzzers and the input generators) contributes their findings to a seed repository called \seedsync, which takes care of distributing the seed across all the fuzzing agents.
+
+However, not all vulnerability finding is performed using fuzzing.
+There is an agent, called \lluminar, that looks at every function using a custom LLM, and determines if the function is vulnerable.
+If that's the case, then the LLM reasons about how to provide an input that can reach the vulnerable function using LLM-based reasoning. 
+
+%ijon system will be included 
+
+\input{sections/coverage_guided_fuzzing}
+\input{sections/afluzzer}
+\input{sections/jazzmine}
+\input{sections/grammar-fuzzing}
+\input{sections/discoveryguy}
+\input{sections/lluminar}
+\input{sections/quickseed}
+\input{sections/aijon}
+
+\input{sections/povguy}
+
+If the crash is not a duplicate it goes to the submitter agent which submitted to the scoring system'
+

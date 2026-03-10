@@ -1,0 +1,11 @@
+\section{Services}
+
+The different components of \artiphishell{} rely on various services to operate.
+These services are initialized and dynamically configured once the required pre-processing stages have completed and the necessary artifacts are available.
+
+\subsection{Function Resolver}
+
+Locating the original source-code implementations of functions is a critical task for all components in \artiphishell{}.
+While this task appears rudimentary at first glance, real code-bases commonly include build-steps that complicate a direct mapping of compilation-artifact function representations back to the original code.
+
+Notable examples of this include auto-generated code (e.g., in parser-generators like Flex, YACC, etc.), build and link-time performance optimizations (e.g., SQLite's ``amalgamation'') and .

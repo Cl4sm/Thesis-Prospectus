@@ -1,0 +1,45 @@
+\section{Related Work}
+\label{sec:related}
+
+
+\noindent
+\textbf{Static solutions.}
+\karonte~\cite{karonte} was one of the first to introduce multi-binary interactions to static analysis in the context of IoT devices.
+Their approach models several input sources, such as environment variables and NVRAM entries, and propagates that information from producer binaries to consumer binaries.
+\satc~\cite{SaTC} continues their approach, but instead of including network interactions as their sources, they use keywords found in front-end files such as JavaScript and PHP.
+They capture directly exploitable vulnerabilities via user input in these front-end files.
+This increases the likelihood that \trupoc{}s will be true positives. 
+However, they ignore other critical binaries in favor of their border binaries.
+Both \karonte and \satc severely limit the scope of analysis for efficiency and reduced false positive rates.
+For example, \karonte and \satc only analyze binaries that are obviously reachable from the outside network; \satc limits input sources even more by enforcing keyword matches.
+As such, they both suffer from high numbers of missed vulnerabilities, as is evidenced by the discrepancy of true positives between \mango and \satc on \karonte's dataset.
+\mango avoids this limitation by significantly increasing the analysis efficiency through design benefits (using static data-flow analysis instead of taint tracking and symbolic exploration) and algorithmic improvements (\rev and \assumed).
+
+Saluki~\cite{gotovchits2018saluki} produces an extremely fast static analysis through the micro execution of paths in the binary.
+Though this approach is much faster than previous work, it requires precise vulnerability descriptions using their custom language, making the tool difficult to use and highly specific.
+\mango takes a much more general approach where categories of sinks defined by function names are set.
+Arbiter~\cite{arbiter} begins to cross into the boundary of dynamic analysis with their use of Under-Constrained Symbolic Execution (UCSE).
+They approach the problem of vulnerability verification with a static taint analysis followed by UCSE for reachability verification.
+However, their approach only works on x86-64 binaries, unlike \mango, which also runs on MIPS and ARM binaries.
+Firmalice~\cite{firmalice} provides backdoor detection and verification in firmware binaries using symbolic execution but is bound by the overhead of symbolic exploration.
+Similarly, FIE~\cite{fie} uses symbolic execution to analyze open-source MSP430 firmware binaries, but there are various firmware binaries that are intractable to analyze with this tool.
+
+\medskip
+\noindent
+\textbf{Firmware rehosting and dynamic analysis.}
+Firmware rehosting refers to the process of running or emulating firmware on workstations or servers for interaction and security auditing.
+Most work in this area conducts full-system emulation of firmware targets, but several have extracted pieces to be analyzed separately~\cite{redini2017bootstomp,costin2014large}.
+Once rehosting succeeds, researchers usually move on to vulnerability testing (e.g., using Metasploit) or fuzzing~\cite{chen2018iotfuzzer,ruge2020frankenstein}.
+Costin et al.~\cite{Costin16} used full-system emulation to rehost COTS firmware, and then used web penetration tools to find vulnerabilities in web servers on rehosted firmware.
+Firmadyne~\cite{chen2016towards}, Avatar~\cite{AVATAR}, Avatar$^2$~\cite{AVATAR2}, and FirmAE~\cite{kim2020firmae} provides more automation into the full-system rehosting process by QEMU-system to rehost firmware images in a large scale.  
+
+Unfortunately, rehosting is usually exceptionally tedious and error-prone, and access to peripherals only available on the original IoT devices is lost.
+Therefore, PROSPECT~\cite{Prospect}, CHARM~\cite{Charm}, and SURROGATES~\cite{Surrogates} conducts hardware-in-the-loop operations during firmware emulation.
+HALucinator~\cite{HALucinator} and DICE~\cite{DICE} emulate Hardware Abstraction Layers (HALs) and the DMA (Direct Memory Access) channel.
+Usually, fuzzing is a natural application after firmware rehosting~\cite{zheng2019firm,zheng2022efficient,srivastava2019firmfuzz,feng2021snipuzz}.
+
+
+% Note: Mention satc handpicked doesn't show false negative rate
+% SATC Dataflows that don't suffer from these issues
+% 
+% True positive will be a range

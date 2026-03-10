@@ -1,0 +1,20 @@
+\section{Environment Resolution}
+\label{sec:environment}
+
+A key advancement that \karonte suggested is modeling multi-binary interactions through analyzing Inter Process Communications (IPCs).
+During multi-binary data-flow analysis, \karonte propagates constraints from source binaries to sink binaries, including environment information extracted along the way.
+The environment resolution in \mango employs a similar tactic.
+However, \mango does not perform symbolic exploration or propagate constraints across binaries that interact through IPCs.
+Instead, \mango directly links setter values and getter variables during data-flow analysis, which achieves \emph{cross-binary} vulnerability sink resolution.
+Our solution is more scalable than \karonte because it avoids path explosion issues in symbolic exploration and runtime overhead involved in constraint solving.
+\mango also applies the same environment resolution approach to front-end keywords analysis that \satc pioneered.
+
+% Instead of propogating constraints we run our normal data-flow analysis, but with many more restrictions.
+% We do not allow analysis of sub-functions and limit the allowable call-depth to 2.
+% The goal of this environment analysis is to not only capture all keys for nvram and environment variables, but also all values in setter functions such as setenv or set\_nvram.
+% We then create a firmware-level dictionary of these values.
+% During our normal data-flow analysis, if one of the IPC getter functions is called, we make an effort to look-up the data in the dictionary.
+% If we marked the value in the dictionary as fully resolvable then we pass the resolved values to our getter function handler.
+% If the function has an entry in the dictionary but the data is marked as unresolved, then we similarly make the return of the getter function an unresolved value.
+% Finally, if there is no entry for the key then we resolve the value to a pre-determined constant.
+% Our intuition for this resolution is that if the key is not used to set a value in any other binary in the system then it is very likely a value pre-determined by the firmware itself.

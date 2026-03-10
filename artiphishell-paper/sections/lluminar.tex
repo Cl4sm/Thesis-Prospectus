@@ -1,0 +1,29 @@
+\subsection{LLuMinar}
+\label{lluminar}
+The LLuMinar agent scans all functions and methods reachable from any harness entry point, using our customized reasoning model to autonomously retrieve relevant context and determine whether a function is vulnerable. If a function is predicted to be vulnerable, the model outputs the predicted CWE type along with a natural language explanation. If the function is determined to be benign, the model outputs reasoning that explains why it poses no security risk.
+
+\subsubsection{Agent scaffold}
+\label{sec:lluminar_agent}
+
+LLuMinar is designed as a lightweight vulnerability scanning agent that rapidly identifies suspicious functions for downstream heavy-weight components (such as DiscoveryGuy) to target for PoC generation. 
+Given the time constraints of the AIxCC competition, we developed a light-weight agent scaffold that incorporates one function retrieval tool with a maximum of five tool invocations to enable fast scanning.
+
+We define target functions as all functions or methods reachable from any harness entry point, meaning functions for which there exists a call graph path from the harness entry point defined in ~\cref{sec:oss-fuzz} in the Analysis Graph database. 
+
+For each target function and its corresponding reachable harnesses, we extract contextual information by sampling three random paths in the call graph from each harness entry point to the target function and providing the implementation of each intermediate function along these paths as initial context. 
+The model is equipped with a tool that can retrieve the implementation of any function given its name, enabling the model to fetch any missing context autonomously. 
+Once the model determines that sufficient information has been collected, it outputs its vulnerability prediction along with reasoning. 
+
+\subsubsection{Model Fine-tuning}
+
+For fine-tuning, we use Qwen2.5-7B-Instruct~\cite{yang2024qwen2} as our base model and apply standard supervised fine-tuning on training data constructed from the ARVO~\cite{mei2024arvo} dataset through four carefully designed data sources:
+
+\textbf{(1) Vulnerable and patched function pairs:} For each instance in ARVO, we extract both the pre-patch (vulnerable) and post-patch (benign) versions of the same function with their corresponding stack traces as context, collecting reasoning from o3. This paired data enables our model to learn the subtle differences between vulnerable and secure implementations of the same functionality, developing fine-grained reasoning capabilities for vulnerability detection.
+
+\textbf{(2) Benign functions:} We randomly select benign target functions and their call graph paths as context, with reasoning also distilled from o3. Since the paired vulnerable/patched data primarily focuses on functions that have experienced security issues, we supplement our training with inherently safe functions to help the model learn the typical properties of non-vulnerable code.
+
+\textbf{(3) Proof-of-concept generation data:} For each vulnerability, we provide prompts including the stack trace, ground truth PoC, and patch, with reasoning distilled from Claude-4. We believe that training the model on proof-of-concept (PoC) generation tasks enhances its vulnerability detection performance. The rationale is that PoC generation inherently requires the model to reason concretely about how inputs propagate along execution paths and precisely identify the conditions triggering vulnerabilities. By including PoC generation data in training, we encourage our model to adopt this concrete, simulation-based reasoning style rather than relying merely on superficial indicators of code vulnerability, such as code smells or simplistic patterns.
+
+\textbf{(4) Agent-based interaction data:} We collect trajectories  using the agent described in ~\cref{sec:lluminar_agent} with o3. This data source specifically enhances our model's ability to effectively utilize our retrieval tool and make informed decisions about when and what additional context to gather.
+
+For all data sources, we applied rejection sampling to retain only samples with correct results. To further increase the proportion of high-quality training data, we adopted a best-of-N strategy: for each data point, we sampled multiple model responses to improve the likelihood of obtaining correct answers. When multiple correct responses were available, we selected the one with the most concise reasoning to promote efficiency in the training data.

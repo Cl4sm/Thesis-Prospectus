@@ -1,0 +1,80 @@
+
+% 
+% \begin{algorithm}
+    % \caption{\rev}
+    % \label{alg:rev-sink}
+    % \small
+    % \begin{algorithmic}[1]
+        % \Function{Reverse\_Trace\_Analysis}{sink, max\_depth}
+        % \State all\_traces $\gets \{\}$
+        % \State $traces = FindTraces(sink, max\_depth)$
+        % \For{trace in traces}
+        % \State $input\_state \gets \{\}$
+        % \State $white\_list \gets []$
+        % \State $rev\_trace \gets \{sink\}$
+        % \For{caller, callee in Reversed(trace)}
+        % \State intra\_functions = CoarseAnalysis(caller, callee)
+        % \For{function in intra\_functions}
+        % \If{DependsOn(callee, function)}
+        % \State $rev\_trace \gets rev\_trace\cup  caller$
+        % \State $white\_list$ := function
+        % \EndIf
+        % \EndFor
+        % \If{DependsOn(callee, caller)}
+        % \State $rev\_trace \gets reverse\_trace\cup  caller$
+        % \Else
+        % \If{CalleeArgsResolved(callee)}
+        % \State $input\_state = callee$
+        % \EndIf
+        % \State all\_traces[reverse\_trace] =
+        % \State $(input\_state, white\_list)$
+        % \State break
+        % \EndIf
+        % \EndFor
+        % \EndFor
+        % \EndFunction
+    % \end{algorithmic}
+% \end{algorithm}
+% 
+% \todo[inline]{Fix this, it looks meh}
+
+\begin{algorithm}[t]
+    \caption{Reverse Trace Analysis}
+    \label{alg:rev-sink}
+    \small
+    \SetAlgoLined
+    \SetInd{0.5em}{0.5em}
+    \SetNlSty{textbf}{}{:}
+    \DontPrintSemicolon
+
+    \SetKwFunction{FReverseTraceAnalysis}{ReverseTraceAnalysis}
+    \SetKwProg{Fn}{function}{}{end}
+    \Fn{\FReverseTraceAnalysis{sink, max\_depth}}{
+        all\_traces = \{\}\;
+        traces = FindTraces(sink, max\_depth)\;
+        \For{trace in traces}{
+            state = \{\}\;
+            white\_list = list()\;
+            rev\_trace = \{sink\}\;
+            \For{caller, callee in Reversed(trace)}{
+                intra\_functions = CoarseAnalysis(caller, callee)\;
+                \For{function in intra\_functions}{
+                    \If{DependsOn(callee, function)}{
+                        rev\_trace = rev\_trace $\cup$ caller\;
+                        white\_list.append(function)\;
+                    }
+                }
+                \If{DependsOn(callee, caller)}{
+                    rev\_trace = rev\_trace $\cup$ caller\;
+                }
+                \Else{
+                    \If{CalleeArgsResolved(callee)}{
+                        state = callee\;
+                    }
+                    all\_traces[rev\_trace] = (state, white\_list)\;
+                    break\;
+                }
+            }
+        }
+    }
+\end{algorithm}

@@ -1,0 +1,85 @@
+\section{Patching}
+\label{patching}
+
+
+
+\paragraph{\poiguy}
+
+\poiguy looks at the stack trace and determines which functions are interesting for the patching.
+
+Then \poiguy goes to the \analysisgraph and extracts the reports produced by \povguy.
+It takes all the crash traces and symbolizes them with the function unique identifiers.
+This symbolization is already done by \povguy if the indexing of functions has been finished.
+
+\poiguy identifies in the stack traces all the functions that can be meaningfully patched (for example, it exclude function from external libraries, such as libc).
+This is not a trivial task: for example sometimes portions of the code get copied to different destinations and the patch has to be put in the original location otherwise it would be correctly propagated during the build process.
+
+For example, in the case of the SQLite target, the building process concatenates all the C files into one file, which is then compiled. The function where the bug is identified is then an offset in this single file but, instead, the patch needs to be applied to the file before concatenation.
+
+Also there are templating where ``.in'' files are compiled into C files and the patch needs to be applied to the ``.in'' file
+
+
+\subsection{Patchers}
+
+\artiphishell adopts a “dyarchy-like” patching design, featuring two fundamentally different patchers, \patchery and \patcherq, that simultaneously attempt automatic program repair (APR) on a discovered vulnerability. 
+Both patchers receive the same input: a comprehensive vulnerability report (augmented with additional information from \poiguy, such as an annotated stack trace) and the crashing input that triggered the vulnerability.
+After the patchers generate (in parallel) their patch attempt, both of them submit their patch to a common patch validator.
+The patch validator consists of the following steps:
+\texttt{CompilerPass}, \texttt{BuildCheckPass}, \texttt{CrashPass}, \texttt{TestsPass}, \texttt{CriticPass} (only for \patcherq),\texttt{RegressionPass}, and \texttt{FuzzPass}.
+More in detail:
+\begin{enumerate}
+    \item \textbf{CompilerPass}: this simply checks if the target project builds correctly after applying the proposed patch.
+    \item \textbf{BuildCheckPass}: this pass ensures that the project’s harnesses have not been modified in a way that causes the patched program to produce zero new coverage when executing inputs.
+    \item \textbf{CrashPass}: verifies that the program no longer crashes when executed with the original crashing input.
+    \item \textbf{TestsPass}: verifies that the program’s functionality tests pass, ensuring no benign behavior has been broken (this test is optional, depending on whether public tests are provided or not from DARPA).
+    \item \textbf{CriticPass}: (only \patcherq) This step performs an LLM-based review of the patch to identify and avoid naive or superficial modifications.
+    \item \textbf{RegressionPass}: Since we are testing against a single crashing input, this step verifies whether similar crashing inputs (that deduplicate to the same vulnerability) still cause the challenge to crash. If they do, it indicates that the patch is incomplete.
+    \item \textbf{FuzzPass}: Finally, we conduct a short fuzzing session on the patched project, using the original crashing input as the initial corpus seed. This serves as an additional check to invalidate naïve patches that merely address the symptoms of a vulnerability rather than its root cause. Moreover, it provides an opportunity to uncover hidden bugs that may exist beyond the original crashing point.
+     
+\end{enumerate}
+
+Whenever a patch successfully passes all validation steps, it is stored in our database and considered for submission.
+
+In the following paragraphs, we provide more details regarding \patchery and \patcherq.
+
+\paragraph{\patchery}
+
+% Ask Zion 
+The Patchery framework is designed around the principle of constraining Large Language Models (LLMs) to a well-defined, procedural role. This approach mitigates the risk of model hallucination by preventing the LLM from performing root cause analysis directly. Instead, Patchery relies on a dedicated root cause analysis engine, Kumushi, for this task. The LLM's sole responsibility is to generate code patches based on specific, pre-processed inputs.
+
+The process begins with function clusters that Kumushi has identified as relevant to a specific vulnerability. Patchery constructs a detailed prompt containing the source code of the functions in a cluster each time and the corresponding vulnerability report (e.g., an ASAN report). This prompt is used to query the LLM for a potential patch. Upon receiving a response, a patch is generated, applied to the source code, and subjected to a series of validation passes to verify its correctness.
+
+If the candidate patch successfully passes all validation passes mentioned above, it is accepted as the final output. If validation fails, the unsuccessful patch and corresponding error messages are appended to the original prompt. This augmented prompt is then resubmitted to the LLM for another attempt. This iterative refinement process is repeated for up to a maximum of ten times per function cluster to find a viable patch.
+
+
+\paragraph{\patcherq}
+
+This represents our attempt to design a system that is orthogonal to \patchery, and therefore, can complement our patching strategy if/when \patchery cannot produce a patch.
+The key difference lies in their fundamental approaches to APR: while \patchery performs patching through a one-shot request with limited LLM-freedom, \patcherq takes the opposite stance by granting the LLM maximum freedom. 
+This allows \patcherq to reason about the vulnerability, its root cause, and the corresponding patch, without adhering to predefined schemes such as ``patch one function at a time.''
+In a nutshell, \patcherq is composed by 2 main agents: the root-cause agent and the programmer agent.
+Both agents operate with a predefined set of tools for exploring the target repository. 
+The root-cause agent is tasked with producing a root-cause report that describes, in natural language, the primary issue in the code, identifies the relevant files, and outlines how the code should be modified to address the vulnerability. 
+On the other hand, the programmer agent uses this root-cause report to generate a patch for the program.
+Our current workflow involves multiple chains of thought: we first attempt to generate a root-cause report with one model and then use the programmer agent to produce a patch. If the patching attempt fails, we restart the process—re-performing root-cause analysis with a different model. Notably, if a \dyva report is available, it is always used as the initial root-cause report in the first attempt.
+
+To verify if a patch remediates the initial vulnerability, \patcherq employs a similar verification strategy as used by \patchery: \texttt{CompilerPass}, \texttt{BuildCheckPass}, \texttt{CrashPass}, \texttt{TestsPass}, \texttt{CriticPass},\texttt{RegressionPass}, and \texttt{FuzzPass}.
+Notably, the only difference from \patchery in this workflow is the inclusion of a one-time LLM-based verification step, the \texttt{CriticPass}. 
+This additional step was included based on the observation that in a few cases, the generated patches were easily circumvented (or too aggressive) despite careful prompt engineering of the agent.
+The \texttt{CriticPass} is executed by an LLM different from the one used to generate the patch (for our purposes, we employed \texttt{GPT-o3}), which does not have tool-calling capabilities. 
+Its sole purpose is to analyze the proposed patch and, using the provided context, identify conditions under which the patch might be bypassed or inadvertently break benign functionality (e.g., an early return).
+If the agent determines such issues exist, the patch is sent back (once) for refinement, after which the \texttt{CriticPass} is deactivated. 
+The rationale for deactivating it is to mitigate the risks associated with LLM-based verification: we aim to avoid scenarios where hallucinations (or overly conservative judgments) by the LLM prevent valid patches from being produced by flagging them as naive or bypassable.
+
+
+\subsection{Patch Management \& Deduplication}
+
+\paragraph{\patcherg} 
+
+% \TBD: Agent that tries to bypass the patch and identifies weak patches.
+
+% Ask Zion
+The CRS is allowed to submit only one patch per bug and. therefore, it is necessary to check if a patch is a duplicate.
+
+At this point, the patch should be submitted.
+If the system is confident that it found a bug that is not duplicated and it did the right patch without duplicates, the system can submit a ``bundle'' for extra points.

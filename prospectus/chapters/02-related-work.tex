@@ -1,0 +1,35 @@
+% ============================================================
+%  CHAPTER 2: RELATED WORK
+% ============================================================
+\chapter{Related Work}
+\label{ch:related}
+
+\section{Static Analysis for Firmware}
+
+Karonte~\cite{redini2020karonte} was the first tool to model multi-binary interactions in IoT firmware through static analysis. It tracks data flows across binary boundaries using environment variables and NVRAM entries as IPC channels, propagating information from producer binaries to consumer binaries. SaTC~\cite{chen2021satc} bolts on network interactions as input sources, using keywords found in front-end files (JavaScript, PHP) to locate entry points in back-end binaries. SaTC finds more true positives per binary, but both tools restrict their analysis scope aggressively: Karonte to network-reachable binaries, SaTC further by keyword matching. The result is that they miss a lot of vulnerabilities (we quantify exactly how many in Chapter~\ref{ch:mango}).
+
+DTaint~\cite{cheng2018dtaint} detects taint-style vulnerabilities in embedded device firmware but only handles individual binaries, so it cannot reason about multi-binary data flows. Saluki~\cite{gotovchits2018saluki} is extremely fast (micro-execution of binary paths), but requires the user to write vulnerability descriptions in a custom specification language, which limits who can actually use it. Arbiter~\cite{vadayath2022arbiter} combines static taint analysis with under-constrained symbolic execution for reachability verification, getting closer to what we want, but it only works on x86-64. IoT firmware is mostly MIPS and ARM.
+
+Tchecker~\cite{luo2022tchecker} does precise inter-procedural taint analysis for PHP applications. Semgrep~\cite{bennett2024semgrep} improves SAST tool performance through pattern-based matching. Both operate on source code, which makes them inapplicable to firmware.
+
+\section{Dynamic Analysis and Firmware Rehosting}
+
+Dynamic analysis of firmware requires running the firmware outside its original hardware. This is called rehosting, and it is (to put it mildly) painful.
+
+Full-system emulation approaches include Firmadyne~\cite{chen2016firmadyne}, FirmAE~\cite{kim2020firmae}, and Avatar/Avatar$^2$~\cite{zaddach2014avatar,muench2018avatar2}. Firmadyne boots firmware in QEMU but has a limited success rate for actually getting to a working system. FirmAE improves on that but still chokes on peripheral-dependent firmware. Greenhouse~\cite{tay2023greenhouse} (which I co-authored) takes a different angle by rehosting individual Linux services in user-space emulation: higher compatibility, lower fidelity.
+
+Hardware-in-the-loop approaches (PROSPECT~\cite{kammerstetter2014prospect}, CHARM~\cite{talebi2018charm}, SURROGATES~\cite{koscher2015surrogates}) keep the real hardware around for peripheral access. HALucinator~\cite{clements2020halucinator} and DICE~\cite{mera2021dice} emulate hardware abstraction layers and DMA channels instead. None of these cover the full diversity of IoT firmware.
+
+Fuzzing rehosted firmware (FIRM-AFL~\cite{zheng2019firmafl}, Snipuzz~\cite{feng2021snipuzz}, FirmFuzz~\cite{srivastava2019firmfuzz}) is a natural complement to static analysis. But all dynamic approaches share the same fundamental constraint: they need the firmware to actually run, and for most firmware images, that remains an unsolved problem.
+
+\section{Symbolic Execution}
+
+Symbolic execution traces back to King's 1976 paper~\cite{king1976symbolic}. Modern engines include KLEE (source-level) and angr~\cite{shoshitaishvili2016sok} (binary-level). angr provides a full symbolic execution engine on VEX IR.
+
+FIE~\cite{davidson2013fie} applies symbolic execution to MSP430 firmware binaries. Firmalice~\cite{shoshitaishvili2015firmalice} uses it for authentication bypass detection. StraightTaint~\cite{ming2016straighttaint} and TaintPipe~\cite{ming2015taintpipe} explore offline and pipelined symbolic taint analysis respectively. The path explosion problem~\cite{krishnamoorthy2010tackling} remains the central obstacle, and nobody has tried operating a symbolic executor on AIL rather than VEX.
+
+\section{AI for Security Analysis}
+
+The DARPA Cyber Grand Challenge (CGC) in 2016 was the first serious attempt at autonomous vulnerability discovery. CGC worked, but the challenge binaries were purpose-built to be analyzable. Real software is much harder. The AIxCC competition~\cite{darpa2025aixcc} updated the challenge for the LLM era: find and patch vulnerabilities in real open-source projects (SQLite, Jenkins, Linux kernel netfilter), fully autonomously. The jump from CGC's toy binaries to AIxCC's real codebases is enormous.
+
+Modern CRS architectures have converged on multi-agent designs where specialized components handle preprocessing, vulnerability identification, root cause analysis, and patching. This mirrors what a human analyst does, just faster. The open question is whether these systems can match (or exceed) human-level precision.

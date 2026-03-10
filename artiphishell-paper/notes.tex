@@ -1,0 +1,97 @@
+There is a submitter component that puts in the Analysis Graph the feedback from DARPA
+
+Indexer puts the data Function resolver serves it.
+It unifies the retrieval operation for consistency.
+
+Diff Guy operates on targets in delta mode.
+Which fucntions change boundary (they are reachable)
+LLM checks if the code introduce new vulns
+COdeQL queries for vulnerabilities
+QUeries are ran against original and then diffed code to see if new warnings appear.
+
+CodeSwipe takes the information from DiffGuy and other components and creates a list of the most probably function.
+
+Corpus Inference tries to understand given a harness what kind of data needs to be passed
+In addition, it finds if there are test cases provided with the target and extract those inputs.
+
+Seed generation: DiscoveryGuide and QuickSeed
+
+Discovery Guy takes CodeSwipe and tries to generate a seed (LLM + Analysis Graph)
+
+HongweiScan is used to ask for each function "Is this function vulnerability" and "what is the CWE" -- contributes to CodeSwipe
+
+
+AI Jane (read paper AI John) 
+
+GrammarRumba goes through the code and finds when for a function a grammar has not reached certain parts of a function.
+
+
+Grammar Writing component 
+
+Grammar fuzzing 
+
+There are two seed queues one where the seed are repsertned as grammar productions one where they are literal.
+There is a component called watch tower that at times transltes the grammar seed into literal seed for the other feed
+Watch Tower synchronize between trans
+
+Covererage Guy is takings and computing the associated coverage information, which is put in the analysis graph
+So that you can ask "Give me all seeds that hit this function"
+
+There is POV Guy and POV Guy Delta (becuase in delta mode the crush must crash in the delta)
+
+POV Guy LowSan creates a looser version of the Jazzer sanitizer 
+This might generate more false positives, which then need to be filtered
+Upload all the POV to the Analysis Graph 
+
+POI Guy annotates the stack traces with the relevant metainformation about which are involved regardles of their position in the compiled ode so that patching ccan be performed on the original repo
+
+POI Guy passses the data to Diva and Crash Explorer
+Crash Explorer find other crasdhing seeds from the initial one
+
+Kumushi (based on Benzene and Aurora) takes the crushing inputs to perform root cause analysis.
+The output os the list of 50 function that are candidates.
+
+Diva uses LLM + gdb to find the root cause of the crash
+and comes out with a text report and root cause location that the pathcers can ingest 
+
+PatcherQ is agentic. Uses Diva as input and if it failes uses internal tools.
+Agnet with tool calls.
+When a patch is obtained, there is a verification process.
+Are we still crashing?
+Can we pass the tests?
+Can we survive a 5 mins fuzzing?
+A critique agent then comments on the patch.
+
+PatcherY (Zion) ingests the Kumushi report to find potential locations to patch and the stack traces from the POI 
+LLM one shot patch genertion
+Are we still crashing?
+Can we pass the tests?
+Can we survive a 5 mins fuzzing?
+(no crititque)
+There is pathcer Y smart and patcher guy dumbm
+
+SARIF guys uses LLM + tools to determine if it is FP or TP
+SARIF Discovery guy, that tries to find a seed that exploits it
+
+PathcerG (AKA the Emperor)
+Maintains all state: What should be submitted, when and why.
+What patches and bugs belong together.
+Really plays the rules game.
+
+
+Eventually the submittter will do the actual submitting.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

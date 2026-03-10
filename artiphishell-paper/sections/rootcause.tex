@@ -1,0 +1,57 @@
+\section{Root Cause Analysis}
+\label{rootcause}
+
+The goal of root cause analysis is to identify which functions need to be patched in order to mitigate the bug that caused a crash.
+\artiphishell{} uses a combination of traditional program analysis techniques and LLM-based agents to create a list of candidate locations for patches. Namely, a statistical root-cause engine called \kumushi{}, and an LLM-based root-cause agent \dyva{}.
+
+
+\subsection{\kumushi}
+\label{kumushi}
+
+%\TBD: Tool based on Aurora~\cite{aurora} and Benzene~\cite{benzene}.
+The \kumushi component combines several approaches to identify functions or groups of functions that are candidates for patching.  
+
+\begin{description}
+\item[Stack Trace:] \kumushi extracts a configurable (yet small) number of functions from the stack trace associated with the crashing seed.
+This is a simple analysis that is motivated by the observation that in previous testing and qualification rounds, 60\% of the crushing functions were within five functions from the crashing site in the stack trace.
+\item[Git Diff:] This approach is used in delta mode only and simply extracts all the functions that are affected by modifications. This is motivated by the fact that a bug must be associated with newly introduced code.
+\item[Full Trace:] \kumushi creates a full execution trace for the crashing seed and collects all the functions that are invoked (up to 4,000).
+\item[Data Dependency Analysis:] This approach uses CodeQL to identify the variables mentioned in the line where the crash happened. 
+Then, it performs additional data analysis queries to find all the functions that might have affected the values of these variables.
+\item[Fuzzing Invariants:] This approach is inspired by the crash analysis in Aurora~\cite{aurora}, and compares the stack traces for crashing seed with the stack traces of benign inputs to identify relevant functions.
+\item[Data From \diffguy:] When delta mode is selected, \kumushi retrieves the functions selected by the \diffguy agent, which are both new and likely to contain bugs (these functions are a subset of the functions returned by the Git Diff approach). 
+\item[Data from \dyva:] \kumushi retrieves from \dyva the list of interesting functions associated with the crashing seed.
+\end{description}
+
+Once the relevant functions are collected using the above-mentioned techniques, \kumushi creates a ranking of the functions based on the number of times they appear in the various lists produced by each approach and the weight associated with specific analysis techniques, which is determined manually based on experience and previous analysis rounds (both qualitative and quantitative information.)
+
+Finally, an LLM-based component is used to select from the top 20 functions which group of two or more functions should be considered together in the patching process.
+This is necessary because some bugs, such as use-after-free vulnerabilities might involve multiple locations.
+
+The output of \kumushi is a list of function tuples that should be considered for patching.
+
+\subsection{\dyva} 
+% ask Will
+Dyva is an LLM agent designed to identify the root cause of software vulnerabilities. 
+For Dyva, we define the root cause as the precise location in source code and the specific program state conditions that leads to the vulnerable behavior. 
+
+To begin analysis, Dyva takes three primary inputs. \circled{1} A stack trace from the program crash or sanitizer report.
+\circled{2} The vulnerability type.
+\circled{3} A crashing seed, which is the specific input that triggers the vulnerability.
+Dyva uses an agentic approach, leveraging a set of tools to systematically investigate the bug. 
+This approach allows it to dynamically formulate and execute an analysis plan based on the information it gathers. 
+The tools available to Dyva include:
+\begin{itemize}
+    \item \textbf{Static Code Analysis}: Dyva has access to the program's indexed source code, enabling it to: \circled{1} Retrieve specific lines of code for inspection. \circled{2} 
+    Fetch the complete definition of any function.
+    \item \textbf{Dynamic Code Analysis}: Dyva can interact with a debugger to observe the program's runtime behavior. It supports GDB for C/C++ and JDB for Java. The debugging capabilities are twofold: \circled{1} State Inspection: Setting breakpoints at specific lines of code to examine the program state, including local variables, memory layout, and register values at that exact moment. \circled{2} State Differentiation: Calculating the "delta" or change in program state between two execution points (e.g., between two lines of code). This allows Dyva to track how variables and registers are modified, isolating the operations that lead to the vulnerable state.
+\end{itemize}
+
+This combination of static and dynamic analysis tools enables Dyva to act as a runtime truth verifier for memory corruption vulnerabilities—such as Integer Overflows or Use-After-Free—where the source code looks syntactically valid but fails  under specific execution states.
+For example, in an Implicit Type Casting bug where a signed \texttt{INT8} (-1) is maliciously interpreted as a massive \texttt{UINT32} length, an agent with only static-analysis abilities often fails to identify the vulnerability lies in the missing input validation, and proposes incorrect logic patches. 
+In contrast, Dyva captures the raw Heap Buffer Overflow signal via the debugger, allowing it to ignore the misleading syntax and prioritize defensive memory constraints (like strict bounds checking), ensuring the identified root cause addresses the actual destructive mechanism.
+
+% This combination of static and dynamic analysis tools enables Dyva to correlate runtime errors with specific source code constructs, performing a comprehensive analysis to pinpoint the vulnerability's origin.
+
+The output of Dyva is a root cause report, containing a structured explanation of the vulnerability. 
+This report includes a natural language description of the bug, the relevant code locations, dataflow leading to the crash, bug class, and candidate patches. 

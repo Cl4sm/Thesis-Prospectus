@@ -1,0 +1,25 @@
+\subsection{\aijon}
+\label{aijon}
+
+\aijon is a fuzzer that implements IJON\cite{aschermann2020ijon} annotations on top of AFL++.
+It contains an LLM agent which inserts these annotations into the target's source.
+
+\aijon takes as input a list of functions that are identified by \codeswipe to possibly contain a vulnerability.
+It then uses the LLM agent to analyze the source code of this single function, so as to reduce the LLM context, and inserts IJON style annotations into its source code.
+
+The LLM is instructed to strategically select annotations that can guide the fuzzer towards the vulnerability specified in the \codeswipe report.
+These annotations provide valuable feedback to AFL++ that can guide it very quickly to the target locations and find a crashing input if any for the specified vulnerability.
+
+However, using such annotations can lead to collisions within the bitmap of AFL++.
+In order to address this problem, we optimize the instrumentation step of AFL++ by limiting the instrumentation to a select list of functions.
+\aijon uses the callgraph contained in the \analysisgraph to identify the functions on the path from the harness' entry point to the target function.
+It then instructs AFL++ to only instrument the functions that are present in these paths.
+This allows AFL++ to focus on the vulnerability in the target function without exploring other sections of the target program and reduces the possibility of collisions in the bitmap.
+
+\aijon also uses the \analysisgraph to generate a starting seed corpus for fuzzing.
+Other fuzzers, such as \afluzzer, could have accidentally generated inputs that reach some of the functions in the call path to the target function.
+These inputs are optimal candidates for being used as seeds, since they have triggered a function close to the target function in the callgraph.
+\aijon collects such inputs from \analysisgraph and uses them as the starting seed corpus.
+
+Any interesting inputs or crashes found by \aijon are synced with \afluzzer.
+This allows \afluzzer to replicate the crashes on the target without annotations and acts as a verification step for the crashes detected by \aijon.

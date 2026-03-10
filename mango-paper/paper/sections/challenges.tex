@@ -1,0 +1,52 @@
+\section{Challenges}
+\label{sec:challenges}
+
+It is possible to extend the functionality of \karonte and \satc to analyze all binaries and all input sources in firmware samples.
+However, this will result in severe precision and scalability problems, which we demonstrate in an ablation study in Section~\ref{sec:evaluation}.
+Here, we briefly present the major challenges that \mango faces and our solutions for solving each challenge.
+
+\subsection{Challenge 1: Precision}
+\label{sec:precision}
+
+A static vulnerability discovery technique that reports a high number of false positives will quickly overwhelm users and fall out of use.
+Researchers find similar human behaviors when studying programmers facing compiler warnings~\cite{kudrjavets2022unexplored}.
+
+Our solution to address the precision problem is three-fold.
+First, we realize that \satc achieves high scalability but much lower precision by relying on a taint-tracking engine.
+\satc can only track if an input value impacts key values at vulnerability sinks, but not \emph{how} this input value is used.
+As such, some false alerts that \satc generates result from imprecision during taint tracking, which frequently occurs when identifying command injection vulnerabilities as tainted values are often processed (and even sanitized) before reaching the sinks.
+
+To address this problem, we create a novel data-flow analysis, \rda, encompassing both value analysis and data dependency analysis over a mixed value domain of integers and fixed-length strings.
+\rda tracks how a value is composed, e.g., which functions generated the value and which operations were applied to it before it is used at vulnerability sinks.
+We will present the details of \rda in Section~\ref{sec:rda}.
+
+Second, as detailed in Section~\ref{sec:function_handlers}, we created function summaries for common library functions, many of which are in \texttt{glibc}.
+These function summaries are particularly helpful in string-related operations where functions have complex internal logic.
+Precisely emulating the binary code of library functions is expensive, and, as such, state-of-the-art tools fail to accurately capture the effects of these library functions.
+% With this we are able to filter out many alerts would other-wise be reported.
+
+Third, we implemented an alert filtering system that prioritizes alerts which are more likely to be reachable by an attacker that we call \trupoc{}s.
+Our goal is to provide \trupoc{}s for which users can easily generate PoCs and demonstrate the vulnerabilities.
+The details of how the ranking of alerts is determined can be found in Section~\ref{sec:alert-ranking}.
+
+
+\subsection{Challenge 2: Scalability}
+\label{sec:speed}
+
+To analyze every binary in each firmware sample, the analysis must be fast.
+\karonte takes an average of 9 hours to analyze a firmware sample where each sample only has five border binaries on average~\cite{karonte};
+\satc takes an average of 17 hours to analyze a firmware sample, but it hyper-focuses on a limited number of input sources for only a small set of binaries with keywords detected.
+The time \satc needs for analysis increases significantly if we cover more than the initial border binaries.
+We extended \satc to analyze all binaries in a firmware image (instead of the maximum of three border binaries).
+In our experiment using the \karonteDataset, where each firmware image contains 127 analyzable binaries on average, \satc took an average of six hours per binary and 762 hours per firmware image.
+
+We propose two key optimizations in \rda to significantly improve the scalability of static data-flow analysis.
+
+The first optimization is \emph{\rev}, traces \emph{backwards} from the callsite of a vulnerable sink to all potential sources of input that do not resolve to constant or known legitimate values.
+A key performance improvement is achieved through quickly eliminating paths that would otherwise resolve to constant values.
+% This is in contrast from a source to sink approach where every path branching out from a source would be explored until finding a sink(s).
+We discuss the details of \rev in Section~\ref{sec:rev}.
+
+The second optimization is \textit{\assumed}, a technique for determining, at each call site, whether the callee function is essential to the data flow that leads to the vulnerability sink.
+This analysis technique can increase false positives caused by pointer aliasing and un-tracked global values; however, our evaluation shows a false-positive rate similar to \satc.
+We present \assumed in Section~\ref{sec:assumed_execution}.

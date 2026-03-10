@@ -1,0 +1,84 @@
+\section{Background}
+\label{background}
+
+\subsection{The AI Cyber Challenge}
+The Artificial Intelligence Cyber Challenge (AIxCC)~\cite{aixcc} seeks to counteract the threat posed by the exploitation of security flaws in critical software by harnessing the power of artificial intelligence. 
+The competition is organized by DARPA in collaboration with ARPA-H and leading AI firms, and it is a two-year, \$29.5 million competition designed to advance automated cybersecurity technologies capable of protecting critical open-source software systems.
+
+AIxCC brings together the cybersecurity and AI communities to design autonomous CRSs that can identify and patch software vulnerabilities. 
+The competition unfolds over a series of structured rounds, including three unscored exhibitions and one scored final round, culminating at DEF CON 33 in August 2025. 
+Prizes have been distributed to encourage broad participation, including awards to small businesses during the initial phase.
+
+CRSs compete by solving real-world software challenges, which simulate critical infrastructure use cases. 
+Each challenge is a codebase that may contain known (injected) or unknown (zero-day) vulnerabilities. 
+These challenges fall into two categories: full-scan (analyzing the entire codebase) and delta-scan (analyzing code changes).
+
+To succeed, CRSs must:
+\begin{itemize}
+    \item Discover vulnerabilities and demonstrate them through Proofs of Vulnerability (PoVs).
+    \item Automatically generate patches that fix vulnerabilities while preserving functionality.
+    \item Assess SARIF (Static Analysis Results Interchange Format) reports~\cite{sarif} for correctness.
+    \item Bundle findings to show relationships between vulnerabilities, patches, and SARIF reports.
+\end{itemize}
+
+Submissions are evaluated by completeness, automated verification, and post-round audits. 
+Scoring is multifaceted, assessing vulnerability discovery, patch effectiveness, SARIF assessment accuracy, and the precision of bundle submissions. 
+An Accuracy Multiplier penalizes spammy or incorrect outputs, encouraging precision.
+
+Strict rules prohibit unethical tactics such as submitting misleading patches (called ``Superman defenses''), exploiting the competition infrastructure, or misusing collaborator resources. 
+CRS models must be open, reproducible, and submitted via designated GitHub repositories. 
+Teams are allotted specific budgets for Azure resources and LLM usage, and their systems must operate within a controlled, partially offline, fully-autonomous environment.
+
+By combining AI innovation with rigorous security testing, AIxCC aims to accelerate the development of trustworthy tools that can autonomously secure the software ecosystem, particularly in sectors where reliability is vital to public health and safety.
+
+\subsection{The Cyber Grand Challenge}
+
+The AIxCC is the follow-up competition to the Cyber Grand Challenge (CGC).
+The CGC, launched by DARPA in 2014 and culminating at DEF CON 24 in 2016, was a cybersecurity competition that introduced the concept of autonomous cyber reasoning systems. 
+Unlike traditional capture-the-flag (CTF) competitions, where human experts identify and patch software vulnerabilities, the CGC challenged teams to build fully autonomous systems capable of performing these tasks without human intervention. 
+These systems had to analyze binary software, identify security flaws, generate working exploits, and apply effective patches—all within a constrained environment and under real-time pressure.
+
+The competition featured a specially constructed testbed and operating system known as DECREE (DARPA Experimental Cyber Research Evaluation Environment), which ensured fairness and consistency across challenges. 
+CGC finalists were selected through a rigorous qualification phase, and seven teams ultimately competed in the final event. 
+The system of each team operated entirely independently, engaging in a head-to-head competition that tested each system’s ability to defend its own software while exploiting vulnerabilities in the software of other teams. 
+The event marked the first time machines competed in a full-scale hacking competition, with no human in the loop.
+
+The CGC significantly advanced research in automated vulnerability discovery and program repair. 
+It laid the foundation for future cybersecurity automation initiatives, including AIxCC, by demonstrating that autonomous systems could meaningfully participate in offensive and defensive cyber operations. 
+Although limited to binaries and constrained in scope, the CGC proved that real-time, machine-scale vulnerability management was not only possible but potentially transformative. 
+
+\subsection{OSS-Fuzz}
+\label{sec:oss-fuzz}
+OSS-Fuzz~\cite{oss-fuzz} is a security-focused initiative launched by Google with the aim of improving the robustness of open-source software through automated fuzz testing. 
+Fuzzing, or fuzz testing, is a technique that involves feeding randomized, potentially malformed, inputs to a program in order to discover security vulnerabilities, crashes, or unexpected behavior. 
+OSS-Fuzz automates this process at scale for open-source projects, providing a continuous fuzzing infrastructure that can detect a wide range of memory safety issues such as buffer overflows, use-after-free bugs, integer overflows, and more. 
+By leveraging fuzzing engines like libFuzzer~\cite{libfuzzer}, AFL++~\cite{aflplusplus}, Honggfuzz~\cite{honggfuzz}, and Jazzer~\cite{jazzer} in conjunction with sanitizers such as AddressSanitizer, UndefinedBehaviorSanitizer, and MemorySanitizer, OSS-Fuzz has been instrumental in identifying and helping fix thousands of vulnerabilities across a broad spectrum of widely used open-source software.
+
+The primary goal of OSS-Fuzz is to enhance the long-term security and stability of open-source infrastructure by offering free fuzzing services to critical projects. 
+The types of software targeted by OSS-Fuzz include, but are not limited to, libraries and tools that are used widely across the industry. 
+This includes components of operating systems, network protocols, image and video parsers, cryptographic libraries, and parsers for common formats like XML and JSON. 
+These projects are often written in memory-unsafe languages like C or C++, where fuzzing is particularly effective. 
+The analysis performed by OSS-Fuzz is continuous; the projects are built and fuzzed automatically on an ongoing basis, ensuring new code or dependencies are regularly evaluated.
+
+Projects submitted to OSS-Fuzz must conform to a certain structure to be successfully integrated into the fuzzing pipeline. 
+Each submitted project includes a Dockerfile that specifies the build environment, which must include all necessary dependencies and configuration needed to compile the target software and its associated fuzzers. 
+The fuzzing targets themselves, known as \emph{fuzzing harnesses}, are small programs that call into the software being tested and expose entry points that can accept arbitrary inputs. 
+These harnesses need to link against libFuzzer (or other supported fuzzing engines) and must define an entry point with a signature like:
+\begin{verbatim}
+extern "C" 
+int LLVMFuzzerTestOneInput(const uint8_t *data, 
+                           size_t size)
+\end{verbatim}
+This function is called repeatedly with randomly generated inputs to exercise as much of the target’s codebase as possible.
+These harnesses should aim to exercise core parsing, decoding, or processing functionality where untrusted input is handled. 
+
+%Integrating an open-source project into OSS-Fuzz involves several steps. 
+%First, the project maintainers or contributors create a new directory under the OSS-Fuzz repository and define a Dockerfile that sets up the build environment. 
+%This Dockerfile typically installs dependencies, configures the build system (e.g., with CMake, autotools, or Bazel), and compiles the fuzzers. 
+%The fuzzing harnesses themselves are usually placed in a fuzz or tests directory and must be able to compile into standalone executables using the fuzzing engine. 
+%Once the Dockerfile and fuzzing targets are prepared, the contributor submits a pull request to the OSS-Fuzz GitHub repository. 
+%After review and approval, the project is added to the OSS-Fuzz system, which continuously builds and fuzzes it in a cloud environment. 
+If a crash or bug is discovered, OSS-Fuzz notifies the maintainers with detailed reports, stack traces, and reproducible test cases.
+
+The effectiveness of OSS-Fuzz lies in its scalability and automation. 
+Continuously fuzzing important open-source projects and integrating tightly with sanitizers and modern fuzzers helps maintainers detect and fix vulnerabilities proactively before they are exploited in the wild. 

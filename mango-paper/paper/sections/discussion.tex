@@ -1,0 +1,43 @@
+\section{Discussion}
+\label{sec:discussion}
+
+We discuss our view on the quality of the data set as well as the limitations of \mango in this section.
+
+\subsection{Threats to Validity}
+
+Based on our experience, there are many more taint-style vulnerabilities in IoT firmware than in traditional software.
+We believe this is partially due to the lack of proper software engineering practices in major IoT device vendors as well as the lack of security defenses in compilers and OSes for embedded devices.
+For example, many MIPS binaries that \mango analyzed did not have stack canary enabled, and the majority of MIPS CPUs do not support address space layout randomization.
+Therefore, while our proposed techniques and algorithms can apply to finding taint-style vulnerabilities in traditional software and commercial off-the-shelf (COTS) binaries, the improvement over traditional forward data-flow analysis may not apply there.
+However, given the sheer number of IoT devices in our community, \mango represents a step forward in automated firmware vulnerability analysis.
+
+We used the \karonteDataset for the sake of consistency as it is a common point that was evaluated on both \satc and \karonte.
+However, the dataset is slightly outdated as there are many more newer firmware from all of the presented vendors.
+In an attempt to combat this and show \mango is practical even on newer and larger firmware we present an evaluation based on a larger and newer dataset as shown in Table~\ref{tab:mango_largescale}.
+
+%% We also implement an approximation of true positives over the entire dataset based on a sample of the overall data.
+%% Our probability based approximation should reflect the actual amount of true positives in \mango's output, however, without a full manual analysis it is impossible to fully verify this.
+
+\subsection{Limitations}
+
+\noindent
+\textbf{\assumed may cause soundness losses.}
+As discussed in Section~\ref{sec:assumed_execution}, \assumed may lead to soundness issues due to incorrect or unreliable analysis results from calling convention, function prototype, and function I/O interface inference.
+
+\smallskip
+\noindent
+\textbf{Balancing between false positives and false negatives.}
+The design of \mango inherently determines that it may report false positives (i.e., vulnerability alerts that are not real vulnerabilities).
+These can be caused by broken data dependencies (usually the result of incomplete CFGs or missing edges on a CFG) or intended functionality.
+Unlike \karonte and \satc, which aim for low false positive rates, we believe that it is vital for a vulnerability detection tool to report as many \trupoc{}s as possible (i.e., lower false negatives) while keeping the false positive rate at an acceptable level.
+Many vulnerabilities that \mango finds are impossible for \karonte or \satc to find.
+% In Section~\ref{sec:alert-ranking} we introduce an alert surfacing method, \trupoc{}s, to reduce the amount of labor work required for sifting through alerts to find true-positive vulnerabilities.
+
+\subsection{Future Work}
+Although \mango has significantly improved finding vulnerabilities in firmware using static analysis, there is yet more room for improvement.
+Currently, \mango focuses solely on command injections from various functions and buffer overflows resulting from \textit{strcpy}.
+The scope of covered vulnerabilities can be widened to path traversals, SQL injections, and other string-related vulnerabilities.
+
+In addition, buffer overflows from bounded operations such as \textit{strncpy}, \textit{snprintf}, and \textit{memcpy} can be introduced with some basic value set analysis.
+A more comprehensive application of value set analysis~\cite{balakrishnan2005codesurfer} allows for informed decisions on which branches should be taken to trigger a vulnerability which will improve \assumed's performance.
+This can also filter out false positive results with the bounding of buffers provided by value set analysis.

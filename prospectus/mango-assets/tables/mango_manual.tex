@@ -1,0 +1,16 @@
+\begin{table}[tb]
+	\centering
+	\small
+	\begin{adjustbox}{width=\textwidth}
+	\begin{tabular}{rr:rr:rr}
+		\hline
+		& \textbf{\trupoc{}s} & \textbf{TP} & \textbf{TP Ratio} & \textbf{FP} & \textbf{FP Ratio} \\
+		\hline
+        Command Injection    & \manualAnalysisCmdInjTotal & \manualAnalysisCmdInjTrueTP & \manualAnalysisCmdInjTPRatio & \manualAnalysisCmdInjTrueFP & \manualAnalysisCmdInjFPRatio \\
+        Buffer Overflow    & \manualAnalysisOverflowTotal & \manualAnalysisOverflowTrueTP & \manualAnalysisOverflowTPRatio & \manualAnalysisOverflowTrueFP & \manualAnalysisOverflowFPRatio \\
+        \hline
+	\end{tabular}
+	\end{adjustbox}
+	\caption{Results of manual analysis on a subset of \mango's \trupoc{}s generated from the \karonteDataset.}
+	\label{tab:mango_manual}
+\end{table}

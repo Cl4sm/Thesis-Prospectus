@@ -1,0 +1,30 @@
+\subsection{QuickSeed}
+\label{quickseed}
+QuickSeed is an LLM fuzzing seed generation tool for Java projects.
+The key insight for discovering vulnerabilities in the Java projects is that 
+Jazzer's sanitizers hook up specific Java API calls to detect the crash.
+For example, to detect OS command injection, Jazzer monitors the invocation of \textit{java.lang.ProcessBuilder.start}.
+This means that if we find all the API calls used by the sanitizers  in the project, we have all the possible crash locations.
+We can use these code locations as sinks and analyze how they can be reached from the harnesses.
+In other words, we can construct the call graph, find all paths that lead to these sinks.
+Besides the APIs used by the sanitizers, we also analyze Java CVEs and find more promising sinks.
+
+After getting all paths to all sinks, QuickSeed takes one sink and one path that can reach the sink as the input and asks LLM to generate a seed that can crash the sink.
+This is the seed generation agent.
+At this stage, we only give LLM all the function code on the call path, the harness code, and the sink code.
+After LLM generates a seed, we run the generated seed against the target and see whether it crashes.
+If it crashes, we go on to the next path.
+Otherwise, we collect the execution trace of the run and see how many functions on the path the seed has covered.
+We then invoke a feedback LLM agent with the coverage information and let the LLM figure out a way to bypass the potential blocker that might exist in the stuck function.
+We give the source code retrieval ability to the feedback agent so that the agent can explore the code base.
+The reason we do this is that, in many cases, the blocker is not on the call path.
+By giving the LLM agent the freedom to explore the code base, we can avoid the complicated data flow analysis and rely on the LLM's ability to analyze the code and find the points of interest critical to reach the sink function.
+
+The biggest challenge is the false negative of the call analysis. 
+For example, the static analysis cannot resolve a reflection call.
+Our solution to resolve this is to run a warm-up LLM agent and generate some seeds for every harness.
+Then we trace these seeds and construct a dynamic call graph.
+And also for every seed that is traced, we use the tracing result to complete the call graph.
+Another challenge is that we can have too many paths.
+To mitigate this issue, we utilize the ranking of CodeSwipe to prioritize the high-value sinks. 
+And also, if for one sink there are many paths that can reach it, we will query the dynamic call graph we have and prioritize the path in the dynamic call graph over the static call graph.

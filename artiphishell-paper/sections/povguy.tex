@@ -1,0 +1,26 @@
+\subsection{\povguy}
+
+\povguy is responsible for taking a crashing seed and a harness and run the seed in a setup that is as close as the canonical target as possible.
+
+First, \povguy pulls the build with the relevant santizer from \builder and runs the input five time to ensure that the input trggers the sanitizer reliably (this is necessary to avoiding that the evaluators fail to reproduce the attack and give a negative score).
+
+The \povguy parses the crashes and determines all the aspects for crash, such as the fact that it was caused by a read or by a write operation.
+It also parses all the stack traces for a crash and extracts the various crash-related information (note that a sanitizer can generate multiple stack traces).
+
+Then, \povguy extracts the information necessary for the deduplication of the crash. 
+\povguy has four different types of deduplication approaches:
+\begin{enumerate}
+\item Dedup OSS-Fuzz: it is the deduplication token used by libfuzzer, which uses the names of the last three functions in stack;
+\item Dedup token full: concatenates everything in a stack traces;
+\item Dedup token Shellphish: similar to the OSS-Fuzz one, but it only uses the functions that are indexed in the source code; this avoids adding to the token library functions such as memcopy, reducing the noise;
+- Dedup token organizers: it uses only the stack of the crashing state associated with the triggering of the sanitizer and generate a token. In the case of Jave, this is an ``instrumentation key,'' which is the sorted list of all classes where at least a function was executed. 
+\end{enumerate}
+\povguy uploads this information to the \analysisgraph.
+
+Then, \povguy reads all the historical dedup tokens from the \analysisgraph  and determines if the current dedup token is a duplicate of an existing one.
+%For this task, \povguy uses the method from the organizers which uses some edit-distance based similarity.
+If there is a similarity, a dupliocation edge is added between the tokens.
+
+In delta mode, \povguy makes sure that the input crashes in the application with the delta and not in the base application, ensuring that the triggered vulnerability is in the added code.
+
+

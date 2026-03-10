@@ -1,0 +1,21 @@
+\section{Introduction}
+\label{introduction}
+
+In today’s hyperconnected society, software forms the backbone of the critical infrastructure—from financial systems to public utilities. 
+While this code supports advanced functionality, it also expands the attack surface for malicious activity.
+Attacks against the critical infrastructure can have disastrous results, including loss of life.
+It is therefore of paramount importance that this critical software is analyzed for security flaws and such flaws are mitigated before deployment.
+
+Unfortunately, the process of identifying potential vulnerabilities, verifying them, and providing effective fixes (i.e., code patches) requires human involvement and substantial expertise.
+Given the scarcity of well-trained security engineers, the process of finding and fixing vulnerabilities cannot be performed at the scale, complexity, and speed necessary to guarantee the security of the critical infrastructure.
+
+Recent advances in artificial intelligence (AI) in general, and Large Language Models (LLMs) in particular, have driven the development of automated tools that might be able to address some of the challenges faced by today's approaches. 
+
+A particularly promising design approach is the \emph{agentic paradigm}, in which multiple autonomous agents, powered by LLM-based reasoning, collaborate to achieve complex tasks.
+
+Inspired by these new advances in AI, the Shellphish team has designed and built \artiphishell, a multi-agent Cyber Reasoning System (CRS) that is able to autonomously analyze software, identify potential flaws, verify their presence, and produce patches that mitigate the vulnerabilities.
+
+\artiphishell has been assessed on real-world, complex software, showing that it can detect and patch vulnerabilities in the components that are routinely used in critical infrastructures.
+
+The design and implementation of \artiphishell is novel in many respects, from its architecture to its use and composition of grammars, to its unique combination of static and dynamic analyses, as well as its root-cause analysis and patch generation.
+In the following, we provide an overall overview of the system, while we will focus on specific innovative techniques in separate publications. 

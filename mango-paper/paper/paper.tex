@@ -1,0 +1,287 @@
+%% Modified for NDSS 2024 by DB on 2023/03/28
+%%
+%% bare_conf.tex
+%% V1.3
+%% 2007/01/11
+%% by Michael Shell
+%% See:
+%% http://www.michaelshell.org/
+%% for current contact information.
+%%
+%% This is a skeleton file demonstrating the use of IEEEtran.cls
+%% (requires IEEEtran.cls version 1.7 or later) with an IEEE conference paper.
+%%
+%% Support sites:
+%% http://www.michaelshell.org/tex/ieeetran/
+%% http://www.ctan.org/tex-archive/macros/latex/contrib/IEEEtran/
+%% and
+%% http://www.ieee.org/
+
+%%*************************************************************************
+%% Legal Notice:
+%% This code is offered as-is without any warranty either expressed or
+%% implied; without even the implied warranty of MERCHANTABILITY or
+%% FITNESS FOR A PARTICULAR PURPOSE! 
+%% User assumes all risk.
+%% In no event shall IEEE or any contributor to this code be liable for
+%% any damages or losses, including, but not limited to, incidental,
+%% consequential, or any other damages, resulting from the use or misuse
+%% of any information contained here.
+%%
+%% All comments are the opinions of their respective authors and are not
+%% necessarily endorsed by the IEEE.
+%%
+%% This work is distributed under the LaTeX Project Public License (LPPL)
+%% ( http://www.latex-project.org/ ) version 1.3, and may be freely used,
+%% distributed and modified. A copy of the LPPL, version 1.3, is included
+%% in the base LaTeX documentation of all distributions of LaTeX released
+%% 2003/12/01 or later.
+%% Retain all contribution notices and credits.
+%% ** Modified files should be clearly indicated as such, including  **
+%% ** renaming them and changing author support contact information. **
+%%
+%% File list of work: IEEEtran.cls, IEEEtran_HOWTO.pdf, bare_adv.tex,
+%%                    bare_conf.tex, bare_jrnl.tex, bare_jrnl_compsoc.tex
+%%*************************************************************************
+
+% *** Authors should verify (and, if needed, correct) their LaTeX system  ***
+% *** with the testflow diagnostic prior to trusting their LaTeX platform ***
+% *** with production work. IEEE's font choices can trigger bugs that do  ***
+% *** not appear when using other class files.                            ***
+% The testflow support page is at:
+% http://www.michaelshell.org/tex/testflow/
+
+
+
+% Note that the a4paper option is mainly intended so that authors in
+% countries using A4 can easily print to A4 and see how their papers will
+% look in print - the typesetting of the document will not typically be
+% affected with changes in paper size (but the bottom and side margins will).
+% Use the testflow package mentioned above to verify correct handling of
+% both paper sizes by the user's LaTeX system.
+%
+% Also note that the "draftcls" or "draftclsnofoot", not "draft", option
+% should be used if it is desired that the figures are to be displayed in
+% draft mode.
+%
+\documentclass[letterpaper,twocolumn,10pt]{article}
+\usepackage{usenix-2020-09}
+\usepackage{amsmath,amsfonts}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\usepackage{algpseudocode}
+\usepackage{textcomp}
+\usepackage{arydshln}
+\usepackage{adjustbox}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{xspace}
+\usepackage{xparse}
+\usepackage{xr}
+\usepackage{pgfplots}
+\usepackage{caption}
+\usepackage{footnote}
+\usepackage{stfloats}
+\usepackage[newfloat]{minted}
+\usepackage{todonotes}
+\usepackage{float}
+\usepackage{multirow}
+
+% References should link
+%\usepackage[colorlinks,allcolors=blue]{hyperref}
+% this gives us those good good citations in []
+%\usepackage[numbers,sort&compress]{natbib}
+
+\let\labelindent\relax
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{graphicx}
+%\usepackage{booktabs} % for nice tables
+\usepackage{tablefootnote} % for table footnotes
+\usepackage{pifont}
+
+\AtBeginEnvironment{quote}{\scriptsize}
+
+\pagestyle{plain}
+
+% colors
+\definecolor{tick-green}{RGB}{33,181,33}
+\definecolor{cross-red}{RGB}{206,16,16}
+\definecolor{yellow}{rgb}{0.99, 0.93, 0}
+
+% elements
+\newcommand{\tick}{\ding{51}}
+\newcommand{\cross}{\ding{55}}
+\newcommand{\gtick}{\textcolor{tick-green}{\tick}}
+\newcommand{\rcross}{\textcolor{cross-red}{\cross}}
+\newcommand{\asu}{Arizona State University}
+\newcommand{\ucsb}{University of California, Santa Barbara}
+
+% environment for code listings
+\newenvironment{code}{\begin{figure}[tb]\captionsetup{type=listing}}{\end{figure}}
+\SetupFloatingEnvironment{listing}{name=Listing}
+
+%\newfloat{algorithm}{t}{lop}
+%\floatname{algorithm}{Algorithm}
+\pagenumbering{gobble}
+
+% better breaks
+\widowpenalty10000
+\clubpenalty10000
+
+% CUSTOM NAMES
+% --------------------------------
+\newcommand{\toolname}{Mango\xspace}
+\newcommand{\mango}{Mango\xspace}
+%\newcommand{\mangoFull}{Fast Firmware Review to Uncover IoT Threats}
+\newcommand{\trupoc}{TruPoC\xspace}
+\newcommand{\karonte}{Karonte\xspace}
+\newcommand{\satc}{SaTC\xspace}
+\newcommand{\taintname}{RDA NAME HERE\xspace}
+\newcommand{\rda}{\textsc{MangoDFA}\xspace}
+\newcommand{\rev}{Sink-to-Source Analysis\xspace}
+\newcommand{\assumed}{Assumed Nonimpact\xspace}
+\newcommand{\richexpr}{Rich Expression\xspace}
+\newcommand{\richexprs}{Rich Expressions\xspace}
+
+% Dataset names
+\newcommand{\karonteDataset}{\karonte Dataset\xspace}
+\newcommand{\satcHandPickDataset}{\satc Selected Dataset\xspace}
+\newcommand{\largeScaleDataset}{Large-scale Dataset\xspace}
+
+\newcommand\parheader{\noindent\textbf}
+
+% Numbers
+\newcommand{\sdsize}{7\xspace} %Small Dataset size
+\newcommand{\sdbugs}{\textbf{TODO}\xspace} %Small Dataset bugs found
+\newcommand{\ldsize}{1,698\xspace} %Large Dataset Size
+\newcommand{\ldvendors}{nine\xspace} %Large Dataset Size
+\newcommand{\karontesize}{49\xspace} %Karonte Dataset Size
+\newcommand{\satcsize}{39\xspace} %SaTC Dataset Size
+\newcommand{\tpalerts}{TODO\xspace}  % Number of true positives on the Karonte data set
+\newcommand{\mangoavgtime}{8\xspace}  % Number of seconds that mango used for analyzing each binary on average
+\newcommand{\satcavgtime}{11297\xspace}  % Number of seconds that satc used for analyzing each binary on average
+% --------------------------------
+
+\lstdefinestyle{mystyle}
+{
+    frame            = tb, % hrule above and below
+    keepspaces       = true,
+    columns          = flexible,
+    basicstyle       = {\scriptsize\ttfamily},
+    escapeinside     = {(*@}{@*)}, % for escaping
+    backgroundcolor  = \color{white},
+    breaklines       = true,
+    showstringspaces = false,
+    language         = C,
+    keywordstyle     = \color{blue},
+    stringstyle      = \color{red},
+    commentstyle     = \color{teal},
+    numbers          = left, % {none, left, right}
+    firstnumber      = 1,
+    numberstyle      = \scriptsize\color{black},
+    captionpos       = b % sets the caption-position to bottom
+    numbersep        = 5pt
+}
+
+\definecolor{mediumblue}{RGB}{15, 46, 160}
+\definecolor{mediumred}{RGB}{186, 15, 16}
+
+\newtoggle{diff}
+\newtoggle{baddiff}
+%% Change the following to \togglefalse{diff} to disable diff output
+%\togglefalse{diff}
+\toggletrue{diff}
+\newcommand{\diff}[1]{\iftoggle{diff}{%
+		{\color{mediumblue}#1}%
+	}{#1}}
+
+
+\toggletrue{baddiff}
+\newcommand{\baddiff}[1]{\iftoggle{baddiff}{%
+		{\color{mediumred}#1}%
+	}{#1}}
+
+\lstset{style=mystyle}
+
+\begin{document}
+\date{}
+
+\title{Operation \mango: Scalable Discovery of Taint-Style\\ Vulnerabilities in Binary Firmware Services} % TODO: replace with your title
+
+\author{
+    {\rm Wil Gibbs$^\ast$, 
+    Arvind S Raj$^\ast$, 
+    Jayakrishna Menon Vadayath$^\ast$, 
+    Hui Jun Tay$^\ast$, 
+    Justin Miller$^\ast$,
+    Akshay Ajayan$^\ast$
+    }\\
+    {\rm
+    Zion Leonahenahe Basque$^\ast$,
+    Audrey Dutcher$^\ast$, 
+    Fangzhou Dong$^\ast$,
+    Xavier Maso$^\dagger$,
+    }\\
+    {\rm
+    Giovanni Vigna$^\ddagger$, 
+    Christopher Kruegel$^\ddagger$,
+    Adam Doupé$^\ast$, 
+    Yan Shoshitaishvili$^\ast$, 
+    Ruoyu Wang$^\ast$
+    }
+    \vspace{0.5em}
+    \\
+    $^\ast$\asu\\
+     \{wfgibbs,arvindsraj,jvadayat,htay2,jmill,aajayan,zbasque,dutcher,fdong12,doupe,yans,fishw\}@asu.edu\\
+    $^\ddag$\ucsb\\
+     \{vigna, chris\}@cs.ucsb.edu\\
+    $^\dagger$contact@xaviermaso.com
+}
+
+
+% don't need this for the submission
+%% \IEEEoverridecommandlockouts
+%% \makeatletter\def\@IEEEpubidpullup{6.5\baselineskip}\makeatother
+%% \IEEEpubid{\parbox{\columnwidth}{
+%%     Network and Distributed System Security (NDSS) Symposium 2024\\
+%%     26 February - 1 March 2024, San Diego, CA, USA\\
+%%     ISBN 1-891562-93-2\\
+%%     https://dx.doi.org/10.14722/ndss.2024.23xxx\\
+%%     www.ndss-symposium.org
+%% }
+%% \hspace{\columnsep}\makebox[\columnwidth]{}}
+
+% Paper related numbers
+\input{sections/data}
+
+
+\maketitle
+%\IEEEpeerreviewmaketitle
+
+\begin{abstract}
+\input{sections/abstract}
+\end{abstract}
+
+
+\input{sections/introduction}
+\input{sections/background}
+\input{sections/challenges}
+\input{sections/approach}
+\input{sections/rda}
+\input{sections/reverse_sink}
+\input{sections/assumed_exec}
+\input{sections/alert_ranking}
+\input{sections/environment_res}
+\input{sections/implementation}
+\input{sections/evaluation}
+\input{sections/discussion}
+\input{sections/related_work}
+\input{sections/conclusion}
+\input{sections/acknowledgement}
+
+\bibliographystyle{IEEEtranS}
+\bibliography{references}
+\appendix
+\input{sections/appendix}
+
+\end{document}

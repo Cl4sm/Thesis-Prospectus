@@ -1,0 +1,6 @@
+\subsection{Coverage-Guided Fuzzing}
+As a baseline, we use \afl~\cite{aflplusplus} and \libfuzzer~\cite{libfuzzer} to fuzz C and C++ codebases, and \jazzmine{}, our Java fuzzer based on \jazzer~\cite{jazzer}, for Java projects..
+Instances of \afl\ and \jazzmine\ are stochastically configured from a predefined configuration space inherent to each tool to ensure diversity of fuzzing instances.
+Examples of such configurations include fuzzing timeouts, CmpLog\cite{aschermann2019redqueen}, string dictionary usage, whether to use grammar-fuzzing, etc.
+This diverse set of fuzzing configurations improves both the bug-finding ability of our system and the resilience of the system to unknown targets.
+All instances of a given fuzzer share discovered seeds between each other, both within a given fuzzing node as well as across fuzzing nodes.

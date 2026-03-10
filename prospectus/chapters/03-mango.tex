@@ -1,0 +1,756 @@
+% ============================================================
+%  CHAPTER 3: OPERATION MANGO
+%  Literal text from: "Operation Mango: Scalable Discovery of
+%  Taint-Style Vulnerabilities in Binary Firmware Services"
+%  Published at USENIX Security 2024
+%  Gibbs et al.
+% ============================================================
+\chapter{Operation Mango: Scalable Discovery of Taint-Style Vulnerabilities in Binary Firmware Services}
+\label{ch:mango}
+
+% ============================================================
+%  SECTION: Introduction
+% ============================================================
+\section{Introduction}
+\label{sec:mango-intro}
+
+The Internet of Things has spawned a device ecosystem that allows users to control and automate everything in their homes---from their locks to their lights.
+This increase in convenience comes with increased security risks, as IoT devices frequently run (often out-of-date) firmware with vulnerable services~\cite{kudelski,cybertalk}.
+
+Modern IoT firmware frequently takes the form of an entire embedded Linux distribution that uses user-space binaries to expose services that can be accessed over the network.
+These services vary from web interfaces for device configuration, complex IoT-specific protocols (e.g., Matter~\cite{matter} and Zigbee~\cite{zigbee}), or custom file-sharing servers with varying levels of complexity.
+Many services invoke backend binaries to gather system and environment information, commit configuration changes, or render webpages.
+
+While complex and feature-rich services make modern IoT devices powerful, this complexity breeds vulnerabilities~\cite{gbhackers,scmagazine}.
+Therefore, automated techniques for scalable and precise detection of these vulnerabilities in the firmware of IoT are in pressing need.
+
+Researchers have proposed analysis techniques to automatically identify vulnerabilities in IoT firmware, which generally fall into two categories:
+(1) static analysis techniques that attempt to statically identify vulnerabilities in the binaries in a firmware image using binary analysis techniques~\cite{karonte,SaTC},
+and (2) dynamic analysis techniques that attempt to identify vulnerabilities through execution of said binaries~\cite{chen2016towards,kim2020firmae,zheng2019firm,zheng2022efficient}.
+Broadly speaking, static approaches tend to discover more vulnerabilities (by covering much of the binary's behavior during analysis) while also reporting false positives (because static analyses cause over-approximation of the binary's behavior).
+At the same time, dynamic approaches lead to much fewer false positives (as dynamic techniques typically have a concrete input that triggers the vulnerability) while also missing vulnerabilities (due to incomplete code coverage).
+
+Dynamic techniques are particularly challenging to apply to the domain of binary firmware services.
+Executing a target service is difficult due to dependencies on the underlying IoT operating system (OS) and hardware.
+Much of the research direction in this area is geared toward running a target service or emulating the hardware.
+But even the best firmware rehosting technique only successfully rehosts around 32\% of 1,764 real-world firmware targets~\cite{greenhouse}, hampering the application of dynamic techniques and making static techniques more promising.
+
+The tantalizing promise of static analysis techniques is that they can be applied to \emph{any} binary firmware service, as there is no need to run or emulate the underlying OS or hardware.
+These techniques, while capable of finding real vulnerabilities, take significant resources:
+On \karonte's dataset of 49 firmware images \satc~\cite{SaTC} spends \SaTConKaronteHours hours processing, while \karonte~\cite{karonte} takes \KaronteonKaronteHours hours.
+Even more troubling, to achieve even this level of scalability, \karonte and \satc paid a significant price in either low coverage or high false negatives, respectively.
+
+To improve scalability, \karonte introduced the concept of \emph{Binary Dependence Graph} (BDG): a graph of nodes representing user-space binaries in a firmware image, with edges between those binaries denoting data flows.
+The BDG is anchored by binaries that are deemed to be network services, and only binaries that exchange data with them are analyzed.
+On \karonte's dataset, this reduces the number of binaries analyzed per firmware sample by \karonte to an average of 5 binaries and \satc, which uses a similar strategy, to an average of 3, thus reducing the analysis requirement significantly from an average of 174 total binaries per firmware.
+
+This technique, though novel, comes with a cost: the strict filtering induced by BDG, which is necessary to ensure scalability, filters out \emph{actual vulnerabilities}.
+For example, the cross-binary vulnerability described in Section~\ref{sec:motivating_example} is undetectable by the BDG technique, as implemented by \karonte and \satc, as it requires limiting the analysis scope to a few binaries determined by their likelihood of interacting with user-input.
+
+\smallskip
+
+In this paper, we propose \mango, a static analysis technique for finding taint-style vulnerabilities in Linux-based user-space firmware services that scales so well that it removes the need for aggressive BDG-based filtering while maintaining reasonable precision.
+\mango's novel, context-sensitive static data-flow analysis, \rda, which leverages intuitive execution patterns and trace shortening, requires no access to source code.
+\rda uses both value analysis and data dependency analysis to enable precise reasoning about the \emph{composability} and \emph{exploitability} of values that flow into vulnerable sinks.
+For example, \rda can correctly deduce that
+
+\begin{quote}
+    \small
+    \texttt{sprintf(buf, "ls \%s", itoa(input));} \\
+    \texttt{system(buf);}
+\end{quote}
+
+\noindent
+is not a vulnerability while
+
+\begin{quote}
+    \small
+    \texttt{snprintf(buf, 50, "echo hello \%s", input);} \\
+    \texttt{system(buf);}
+\end{quote}
+
+\noindent
+may be vulnerable to command injection.
+
+To improve scalability, we draw inspiration from how human reverse engineers find taint-style vulnerabilities in software:
+Starting from vulnerability sinks and iteratively tracing backward through potential parent functions to determine if any data flows are likely vulnerable.
+Moreover, instead of analyzing each callee in every function along the call tree, human reverse engineers decide on a per-call basis if the call to a callee function would impact the data flow.
+These two steps are critical for reducing false positive rates and increasing analysis speed.
+
+Using this inspiration, we implement two novel optimizations in \rda, namely \emph{\rev} and \emph{\assumed}, which mimic humans' actions during manual vulnerability discovery, and these optimizations are key for achieving scalability.
+
+\rda allows \mango to significantly increase the analysis scope \emph{while simultaneously improving overall performance.}
+\mango analyzed \emph{all \mangoKaronteBinaries binaries} across the 49 firmware samples in the \karonte dataset in \mangoCompTotalTimeHours hours, while \satc analyzed \satcTotalAnalyzedBins total binaries in \satcCompTotalTimeHours hours of CPU time and \karonte analyzed \karonteAnalyzedBinaries binaries in 463 hours.
+While these performance numbers were done on different hardware at different times, \mango analyzed 27$\times$ more binaries in a comparable amount of time that it took \satc to analyze \satcTotalAnalyzedBins binaries.
+\mango's average per-binary analysis time is \mangoavgtime minutes compared to \SaTCTimePerBin hours for \satc and \karonteTimePerBin hours for \karonte.
+
+The current implementation of \mango supports two classes of vulnerabilities:
+CWE-78 (OS Command Injections) and CWE-121 (stack-based buffer overflows).
+Both comparative solutions, \karonte and \satc, work explicitly on Linux-based user-space binary firmware services and not on monolithic or RTOS-based firmware.
+Through a comparative study on the firmware dataset on which \satc and \karonte evaluated (with \karontesize unique firmware samples), we demonstrate that \mango generates \satcFalseNegatives true positives that are never alerted by \satc and similarly \karonteFalseNegatives true positives that are missed by \karonte.
+
+We also conduct an ablation study to demonstrate the effect of \rev and \assumed on efficiency and effectiveness.
+The improved efficiency of \mango allows us to conduct a large-scale vulnerability discovery on a new dataset with \ldsize firmware samples from \ldvendors vendors.
+\mango reports every potential bug it finds, \mangoTotalAlerts alerts in total.
+However, this number of alerts cannot be reasonably triaged.
+To aid in separating bugs from vulnerabilities, we introduce the concept of ranked alerts, which we call \trupoc{}s.
+Manual analysis on a sample set of these alerts suggests a true positive rate of \mangocmdiTP for command injections and \mangooverflowTP for buffer overflows.
+For every 10 command injection alerts a human analyst triages, 5 will be actual vulnerabilities.
+
+\smallskip
+\noindent
+\textbf{\textit{Contributions.}}
+Our paper makes the following contributions:
+
+\begin{itemize}[noitemsep]
+    \item
+          We build a novel data-flow analysis, \rda, on the domain of integers and fixed-length strings, enabling scalable discovery of taint-style vulnerabilities.
+          This new domain allows precise reasoning of string values that flow into vulnerable sinks, and is more precise than traditional taint analysis.
+
+    \item
+          We further propose two optimizations, \rev and \assumed, which are critical for the efficiency and false negative reduction of \rda.
+
+    \item
+          We implement \rda in a prototype system, \mango, and evaluate it against the state-of-the-art solutions for finding taint-style vulnerabilities in firmware binaries.
+
+\end{itemize}
+
+\smallskip
+\noindent
+In the spirit of open science, the source code and artifacts of \mango, along with a Docker image for replicating our experiments, can be found at \url{https://github.com/sefcom/operation-mango-public}.
+The contributions in this paper will also be integrated into angr~\cite{wang2017angr}.
+
+
+% ============================================================
+%  SECTION: Background
+% ============================================================
+\section{Background}
+\label{sec:background}
+
+Before diving into the technical details of \mango, we provide the necessary background information on vulnerabilities in binary firmware services and discuss the associated challenges in discovering them with state-of-the-art static analysis techniques.
+
+\subsection{Firmware Types}
+
+Qasem et al.~\cite{qasem2021automatic} categorized firmware into three types:
+Type~I, where there is a clear separation between the Operating System (OS) and the contained firmware services (in terms of files and processes), Type~II, where the OS and services are combined into a monolithic binary blob, and Type~III, where there is no OS but only logic embedded in a blob.
+
+Type~II and Type~III firmware are typically used to implement software for programmable logic controllers (PLCs) and real-time, low-power embedded devices (generally with less complicated logic).
+Type~I firmware is more commonly seen in feature-rich and complex IoT devices such as routers, webcams, or networked CCTVs, where the OS is usually embedded Linux and services are ELF binaries (of varying architectures).
+A 2014 study by Costin et al.~\cite{costin2014large} found that over 86\% of firmware samples in a large dataset of 32,356 images were Type~I firmware using embedded Linux as the OS.
+Similar to prior work~\cite{celik2018sensitive,mandal2020cross} in this area, our research focuses on finding taint-style vulnerabilities in the user-space services of Type~I firmware.
+
+
+\subsection{Motivating Example}
+\label{sec:motivating_example}
+
+\begin{code}
+    \caption{Decompiled code of the \texttt{httpd} and \texttt{dlnad} binary from the Netgear R6400. \mango can identify this vulnerability while \karonte and \satc will not analyze \texttt{dlnad}.}
+    \label{dlnad_vuln}
+    \lstinputlisting[style=mangostyle]{mango-assets/code/dlnad_vuln.c}
+\end{code}
+
+
+Listing~\ref{dlnad_vuln} shows a vulnerability in the Netgear R6400 router, which is in the dataset for \karonte and the ablation dataset \satc used.
+The vulnerability here is straightforward: a command injection based on the \texttt{iserver\_passcode} front-end keyword.
+\satc missed this vulnerability, and \karonte would have as well if it supported command injections.
+Both of these tools missed this vulnerability because the border binary analysis for both tools does not include \texttt{dlnad} as a potential target.
+For example, \satc prioritizes binaries with more references to frontend keywords and limits border binaries to three per firmware image.
+Due to the simple functionality and small size of \texttt{dlnad}, it is excluded by the border binary selection algorithm in \satc.
+
+\subsection{Firmware Vulnerability Analysis}
+\label{sec:observation}
+
+For finding taint-style vulnerabilities in firmware, prior work proposes two genres of techniques:
+(1) firmware rehosting and dynamic analysis and (2) static analysis.
+
+\smallskip
+\noindent
+\textbf{Firmware rehosting and dynamic analysis.}
+Given the limited computing capabilities of IoT devices, researchers attempt to run firmware services on commodity systems, usually using an emulator such as Qemu~\cite{qemu} to leverage dynamic analysis techniques such as fuzzing.
+While researchers have focused on making taint-style analysis more approachable~\cite{clause2007dytan,ming2016straighttaint,ming2015taintpipe}, the performance of dynamic techniques is limited by the effectiveness of firmware re-hosting, the quality of input seeds, and efficient coverage exploration, making it difficult for dynamic techniques to find taint-style vulnerabilities with reasonable scalability.
+
+Consider the motivating example in Listing~\ref{dlnad_vuln}: to use a dynamic analysis technique, an analyst must first identify the connection that \texttt{dlnad} has to \texttt{httpd} through NVRAM variables.
+It would be an unlikely target because it does not actively process user input like a web server would.
+Further, even if an analyst wanted to analyze \texttt{dlnad}, it requires a specific combination of NVRAM values and properly formatted user input for the variables to trigger.
+
+\smallskip
+\noindent
+\textbf{Static analysis.}
+Static analyses sacrifice precision for higher scalability.
+Analyzing binaries statically requires a deep understanding of the binary format, the underlying architecture, and the operating system for which the binary is built.
+A typical static analysis workflow includes disassembling, lifting to an intermediate language (IL), CFG recovery, and various types of advanced analysis atop.
+
+Symbolic execution on binaries~\cite{king1976symbolic,wang2017angr} allows tracking data flows in a binary:
+It simulates the execution of the target binary on a value domain of both concrete values and symbolic values (e.g., variables with unknown values), collects path constraints, and solves path constraints to derive possible values for symbolic values.
+The caveat is that symbolic execution is computationally expensive and suffers from path explosion~\cite{krishnamoorthy2010tackling}.
+Another technique for tracking data flows in a binary is static taint analysis~\cite{saxena2008efficient}.
+It marks the source of the data and tracks it through the program, approximating the effects of function calls until reaching sinks.
+Static taint analysis may suffer from over-tainting, marking values as tainted when they are not, and under-tainting, missing tainted values.
+
+Depending on the analysis goals, these static analyses may adopt value domains (e.g., the concrete domain where only concrete values are considered, or the value-set domain~\cite{balakrishnan2005codesurfer} where every value is modeled using its bits, lower- and upper-bounds, and its stride) with varied precision.
+
+\smallskip
+\noindent
+\textbf{Firmware taint analysis.}
+State-of-the-art static analysis techniques for finding firmware vulnerabilities, such as \karonte~\cite{karonte} and \satc~\cite{SaTC}, start their analysis from \emph{border binaries}, binaries that they determine to be reachable from the local network.
+\satc takes it one step further:
+It identifies common keywords in web API interfaces and ignores all other interfaces.
+
+While sometimes users knowingly communicate with their IoT devices via front-end web services (e.g., logging into a router's management portal), this is not the only available input vector for firmware services.
+Many services, such as \texttt{miniupnpd}, communicate without frontend interfaces but are open to receiving data from the local network, if not the Internet.
+By only focusing on border binaries and common web-API-style endpoints, \karonte and \satc are likely to miss a large portion of vulnerability sources, which leads to false negatives (i.e., missed vulnerabilities).
+
+\smallskip
+
+While static analysis is the more viable approach for finding taint-style vulnerabilities, both \karonte and \satc severely limit the potential vulnerability sources (by only analyzing border binaries and input locations with specific keywords), which impacts their ability to find vulnerabilities.
+Because \rda is more scalable, \mango takes a different approach:
+It analyzes \emph{every valid binary} in each firmware sample, flagging and filtering potential vulnerabilities.
+
+\subsection{Threat Model and Scope}
+\label{sec:threat_model}
+
+Unlike \karonte or \satc, we do not limit which binaries handle user input.
+Both use the concept of Border Binaries to limit the scope of their analysis to both reduce false positives and analysis times.
+However, \mango does not need this limit as it is able to analyze entire firmware samples in a reasonable amount of time.
+We do this exclusively on Linux-based user-space firmware binaries.
+
+\smallskip
+\noindent
+\textbf{Bug reports and triggerable vulnerabilities.}
+Because \mango runs on every binary in a given firmware, it identifies legitimate bugs in the current firmware regardless of whether the bugs are triggerable.
+For example, \mango can identify a vulnerable function that is unused or in an executable on the file system that an attacker cannot currently execute.
+While finding these bugs is essential, in this paper, we give a higher priority to finding \emph{triggerable} vulnerabilities\footnote{When we conduct responsible disclosure for vulnerabilities to vendors, they would only accept vulnerability reports that come with Proof-of-Concept exploits (PoCs) that trigger the vulnerability and proactively reject vulnerability reports without PoCs.}.
+We coin these triggerable vulnerabilities \emph{True PoCable vulnerabilities}, or \emph{\trupoc}s in short.
+We implement a filtering system (described in Section \ref{sec:alert-ranking}) to prioritize bug reports that are more likely to be reachable by an attacker, thereby separating triggerable vulnerabilities from ordinary bug reports.
+
+
+% ============================================================
+%  SECTION: Challenges
+% ============================================================
+\section{Challenges}
+\label{sec:challenges}
+
+It is possible to extend the functionality of \karonte and \satc to analyze all binaries and all input sources in firmware samples.
+However, this will result in severe precision and scalability problems, which we demonstrate in an ablation study in Section~\ref{sec:evaluation}.
+Here, we briefly present the major challenges that \mango faces and our solutions for solving each challenge.
+
+\subsection{Challenge 1: Precision}
+\label{sec:precision}
+
+A static vulnerability discovery technique that reports a high number of false positives will quickly overwhelm users and fall out of use.
+Researchers find similar human behaviors when studying programmers facing compiler warnings~\cite{kudrjavets2022unexplored}.
+
+Our solution to address the precision problem is three-fold.
+First, we realize that \satc achieves high scalability but much lower precision by relying on a taint-tracking engine.
+\satc can only track if an input value impacts key values at vulnerability sinks, but not \emph{how} this input value is used.
+As such, some false alerts that \satc generates result from imprecision during taint tracking, which frequently occurs when identifying command injection vulnerabilities as tainted values are often processed (and even sanitized) before reaching the sinks.
+
+To address this problem, we create a novel data-flow analysis, \rda, encompassing both value analysis and data dependency analysis over a mixed value domain of integers and fixed-length strings.
+\rda tracks how a value is composed, e.g., which functions generated the value and which operations were applied to it before it is used at vulnerability sinks.
+We will present the details of \rda in Section~\ref{sec:rda}.
+
+Second, as detailed in Section~\ref{sec:function_handlers}, we created function summaries for common library functions, many of which are in \texttt{glibc}.
+These function summaries are particularly helpful in string-related operations where functions have complex internal logic.
+Precisely emulating the binary code of library functions is expensive, and, as such, state-of-the-art tools fail to accurately capture the effects of these library functions.
+
+Third, we implemented an alert filtering system that prioritizes alerts which are more likely to be reachable by an attacker that we call \trupoc{}s.
+Our goal is to provide \trupoc{}s for which users can easily generate PoCs and demonstrate the vulnerabilities.
+The details of how the ranking of alerts is determined can be found in Section~\ref{sec:alert-ranking}.
+
+
+\subsection{Challenge 2: Scalability}
+\label{sec:speed}
+
+To analyze every binary in each firmware sample, the analysis must be fast.
+\karonte takes an average of 9 hours to analyze a firmware sample where each sample only has five border binaries on average~\cite{karonte};
+\satc takes an average of 17 hours to analyze a firmware sample, but it hyper-focuses on a limited number of input sources for only a small set of binaries with keywords detected.
+The time \satc needs for analysis increases significantly if we cover more than the initial border binaries.
+We extended \satc to analyze all binaries in a firmware image (instead of the maximum of three border binaries).
+In our experiment using the \karonteDataset, where each firmware image contains 127 analyzable binaries on average, \satc took an average of six hours per binary and 762 hours per firmware image.
+
+We propose two key optimizations in \rda to significantly improve the scalability of static data-flow analysis.
+
+The first optimization is \emph{\rev}, traces \emph{backwards} from the callsite of a vulnerable sink to all potential sources of input that do not resolve to constant or known legitimate values.
+A key performance improvement is achieved through quickly eliminating paths that would otherwise resolve to constant values.
+We discuss the details of \rev in Section~\ref{sec:rev}.
+
+The second optimization is \textit{\assumed}, a technique for determining, at each call site, whether the callee function is essential to the data flow that leads to the vulnerability sink.
+This analysis technique can increase false positives caused by pointer aliasing and un-tracked global values; however, our evaluation shows a false-positive rate similar to \satc.
+We present \assumed in Section~\ref{sec:assumed_execution}.
+
+
+% ============================================================
+%  SECTION: Approach Overview
+% ============================================================
+\section{Approach Overview}
+\label{sec:approach}
+
+\begin{figure}[tb]
+    \includegraphics[width=\textwidth]{mango-flat.pdf}
+    \centering
+    \label{fig:mango_diagram}
+    \caption{The workflow of \mango.
+        \mango searches for all potential vulnerable and environment ELFs.
+        It first analyzes all ELF files that can affect the environment and then analyzes all ELF files containing designated sinks with the context provided by the initial environment analysis.
+    }
+\end{figure}
+
+\mango takes a firmware image as input, analyzes all binary executables (not including library files) in the unpacked file system, and generates \trupoc{}s for potential vulnerabilities given the specified vulnerability class.
+Similar to \karonte and \satc, \mango also supports multi-binary interactions and values derived from front-end keywords.
+After ingesting the firmware image, \mango automatically performs subsequent analyses.
+Finally, \mango outputs ranked POCs termed \trupoc{}s for the user to review.
+
+
+The major analysis steps \mango performs are as follows:
+
+\smallskip
+\noindent
+\textbf{Firmware Pre-processing.}
+\label{sec:preprocessing}
+The main goal of \mango is to analyze ELF executables and identify potential vulnerabilities.
+It is important to note that we specifically do not analyze libraries as their vulnerabilities are more difficult to definitively categorize as true positives or false positives in a given firmware.
+\mango takes a firmware image as input, uses existing tools (such as binwalk~\cite{binwalk}) to unpack the firmware sample, and finds all ELF executables.
+For all binaries, we gather their imported library function names.
+As long as the binary is not stripped and statically linked, we can recover function names such as \texttt{system} or \texttt{strcpy}.
+Later, we will use these symbols to determine whether or not to analyze a given binary.
+
+\smallskip
+\noindent
+\textbf{Keyword Discovery.}
+\satc introduced keyword-guided analysis, which increases the attack surface user input can reach and reduces the number of binaries that need to be analyzed.
+\mango also gathers front-end keywords from HTML, JS, ASP, and PHP files.
+These keywords are a combination of string-literals and object fields that identify user input locations in backend binaries.
+
+\smallskip
+\noindent
+\textbf{IPC Discovery.}
+\mango uses Inter-Process Communication (IPC) data-flow tracking, first proposed by \karonte, to detect potential interactions between binaries in a given firmware sample.
+Specifically, \mango considers inter-process interactions that involve NVRAM entries and environment variables.
+\mango performs static analysis (based on \rda) to collect all NVRAM and environment variables that each binary either sets or retrieves.
+\mango transforms these accesses into a dictionary of setters and getters keyed by the function and recovered value (if applicable) along with which binary the value originated from and its callsite within the binary.
+
+\smallskip
+\noindent
+\textbf{Resolving Vulnerability Sinks.}
+Resolving vulnerability sinks is the core step of \mango, where, for each vulnerability sink (e.g., the glibc \texttt{system} function) in each binary, it recursively resolves the sink to a \emph{\richexpr}, which captures the source values and all operations (e.g., \texttt{strcpy} and \texttt{sprintf} with format strings) applied to these source values.
+The sink-resolving procedure is inter-function within the same binary and inter-binary if source values originate from NVRAM entries or environment variables that \mango recovered during the IPC Discovery step.
+
+\mango continues sink resolving until (1) it reaches the entry point of the binary, (2) all sink values are resolved to either \emph{legitimate values} or \emph{unresolvable values}, or (3) it times out.
+Legitimate values are not attacker-controllable or exploitable, such as constant values, constant pointers, or sanitized user input.
+All other values are unresolvable, including user or external input and buffers with unresolvable content due to missed or unsupported library calls.
+
+
+% ============================================================
+%  SECTION: MangoDFA
+% ============================================================
+\section{\rda}
+\label{sec:rda}
+
+The core static data-flow analysis is \rda, which is a combination of a static value analysis that tracks all possible values for each variable (in binary analysis, variables refer to value containers, such as registers, memory cells, etc.) at each program location and a data dependency analysis that tracks where each value is defined and used.
+This is a critical difference from prior work:
+Both \karonte and \satc use taint-tracking, which means they can only mark certain variables and values as \emph{tainted} by input data or not.
+In comparison, \rda creates def-use graphs, with which \mango can reason about how any value was created from its source values and what operations have been applied.
+We call these expressions \emph{\richexprs} because they capture not only the concrete values but also rich information about their history and dependencies.
+
+An example \richexpr is: \texttt{"df -d " .. itoa(atoi(input\_1)) .. " -h " .. input\_0)} where ``\texttt{..}'' represents the string concatenation operation.
+In this case, the underlying \richexpr can be broken into its 4 components, \texttt{"df -d "}, \texttt{itoa(atoi(input\_1))}, \texttt{" -h "}, and \texttt{input\_0}, at any time with their corresponding dependencies already held in a global dependency graph.
+If a call to \texttt{system()} has a \richexpr as the first argument (such as the one described), \mango can determine that \texttt{input\_1} does not lead to arbitrary command injection as its value was derived from an integer.
+In contrast, \texttt{input\_0} may lead to a command injection vulnerability as its origin value is unhindered.
+Neither \karonte nor \satc could determine that \texttt{input\_1} would not contribute to a vulnerability, which leads to higher false positive rates and reduced analysis speed due to over-tainting.
+
+\rda is the foundation for various sub-analyses on which \mango depends, such as calling convention inference and function prototype inference.
+    \mango uses calling convention inference to determine the ABI of each function, which can be different even for functions within the same binary.
+    \mango further uses function prototype inference to determine the number and the sizes of arguments for each function and if there is a return value.
+    Both types of information are necessary for inter-function analysis.
+    These sub-analyses are purely engineering work of existing research~\cite{balakrishnan2004analyzing,zhang2007parameter} and are not our scientific contributions in this paper.
+
+\subsection{\rda Basics}
+
+\noindent
+\textbf{Value domain.}
+\rda employs a value domain that is specifically designed for finding command injection vulnerabilities.
+Basic value types in this domain include bit-vectors (integers and strings with fixed lengths) and a TOP ($\top$) value.
+Each value in this domain is either a \emph{MultiValue} that contains at most $N$ bit-vector values, a $\top$ value, or an \emph{Expression} that is composed of \emph{operations} that are applied on MultiValues.
+Each instance of MultiValue and Expression is of a fixed number of bits.
+\rda is flow-sensitive but not path-sensitive, which means that whenever multiple paths merge, the values in each variable will be merged, creating MultiValues with more than one basic value inside.
+A MultiValue with more than $N$ bit-vectors becomes a $\top$, and overly deep expressions (we empirically limit it to 20) also become $\top$.
+We choose a small $N$ ($N=5$) to guarantee fast convergence of the data-flow analysis.
+
+\smallskip
+\noindent
+\textbf{Data dependency tracking.}
+The data dependency analysis in \rda is similar to traditional, source-code-based data dependency analysis:
+\rda tracks where each variable is first defined and keeps a separate record for program locations where each defined variable is used.
+The definition record is associated with each value (bit-vectors or $\top$ values).
+During path merging, \rda will adjust the association of definition records and re-associate definition records of old values to newly created $\top$ values if needed.
+
+\smallskip
+\noindent
+\textbf{Memory model.}
+The abstract state used in \rda models ``loads from'' and ``stores into'' for registers, global memory regions, stack regions, and heap locations in a bit-precise manner.
+Because \rda performs intra-function analysis by default, it only models one stack frame (also known as activation record).
+
+\subsection{Inter-function Analysis}
+To resolve sinks, \mango requires inter-function analysis.
+Building an inter-function \rda from an intra-function \rda is straightforward.
+At every call site, \mango makes a copy of the abstract analysis state thus far, creates a new stack frame to simulate the call, invokes a new \rda on the copy of the abstract state, and then waits until the new \rda instance terminates.
+Then, \mango merges all exit states that the new \rda yields to get a new output state and uses that state to resume the outer-level \rda analysis.
+
+\subsection{Function Summaries}
+\label{sec:function_handlers}
+
+The more accurately \rda models the execution of a binary, the higher level of precision \mango can achieve.
+\karonte and \satc are based on taint tracking, which models dependency relationships between input arguments and output values of certain library functions.
+Precisely propagating taints through many library functions (especially in \texttt{glibc}) can be difficult due to the complexity of the logic and implementations of these library functions, which may lead to excessive amounts of false positives and false negatives.
+Therefore, \mango implements function summaries for common library functions to ensure that values and data dependencies are modeled as accurately as possible.
+
+Re-implementing library functions has the added benefit of reducing false positives caused by changes in value types.
+It is a common and normal execution pattern for programs to manipulate strings into non-injectable forms, such as using \texttt{atoi} to transfer the string into an integer or the \texttt{"\%d"} format specifier for the \texttt{printf} function family, making injections impossible.
+\satc does not recognize these input type changes and will report a (false-positive) vulnerability even if the tainted value is not injectable.
+
+
+% ============================================================
+%  SECTION: Sink-to-Source Analysis
+% ============================================================
+\section{\rev}
+\label{sec:rev}
+
+\input{mango-assets/algorithms/reverse_sink}
+
+Finding all input sources and performing forward data-flow analysis to find all vulnerability sinks is expensive.
+It is frequently unknown if values that depend on input sources will eventually flow into the vulnerability sink with a meaningful degree of control or exploitability.
+Shorter call traces for forward data-flow analysis imply a shorter analysis time because no extra time is spent analyzing irrelevant functions.
+
+We propose a new workflow, \rev, inspired by human reverse engineers.
+Reverse engineers tend to work \emph{backwards} from potentially vulnerable program locations (e.g., a call to \texttt{system()}) to understand which input sources (if any) can reach this location instead of working from the input sources and exploring every possible path the inputs can take.
+These special program locations frequently coincide with vulnerability sinks for taint-style vulnerabilities.
+In the context of human reverse engineering, these special locations are also referred to as \emph{beacons}~\cite{votipka2019observational}.
+
+Tracing backward from vulnerability sinks instead of forward to the sinks limits the explored program paths to only those directly relevant to the sinks.
+By analyzing caller function by caller function, backward through a call stack, \rev limits the analysis required to determine reachability.
+Source-to-Sink Analysis may explore any number of unimportant paths to discover how or even if tainted data will reach the sink.
+
+DTaint~\cite{cheng2018dtaint} employs a similar Sink-to-Source approach, but it requires analysis of every function in the callgraph backwards to the highest-level source, thereby analyzing many functions that ultimately do not affect the sink.
+During our Sink-to-Source analysis, if \rda determines that a data flow flows into an unexploitable variable (e.g., a properly sanitized string or a string that is ultimately converted into an integer), it immediately abandons this variable and terminates the data flow.
+Consider the example \texttt{sprintf(buf, "cal \%d", year)}, \rda performs a data-dependency analysis that determines that \texttt{buf} will never contain a vulnerable string and terminates its analysis.
+However, DTaint will continue to analyze up through the call chain until it can find a source for \texttt{year}.
+
+Our \rev algorithm, as shown in Algorithm~\ref{alg:rev-sink}, begins by finding all possible traces to the sink for a given CFG.
+We perform a coarse-grain value dependency analysis on each caller-to-callee pair, working backward from our sink in every trace.
+The analysis results determine if data reaching the sink solely depends on data from the specified caller in the trace.
+
+Suppose there is a call to \texttt{system} with a command that is entirely dependent on the result of reading a file, environment variables, NVRAM variables, or data from the network; the analysis is halted as higher-level caller functions in the callstack will not contribute to the data that \texttt{system()} ultimately depends on.
+If no variables are dependent on the caller function arguments, there is no need to analyze anything further, but we must keep the current trace depth for data dependencies inside the caller function.
+If the data depends on function arguments, the analysis continues up the call stack.
+However, if during the analysis of the next call-depth, all callee functions have constant or fully resolvable values, then we discard the current call-depth and retain a final state with set arguments for the callee.
+To analyze the caller function of a fully analyzed function, we simply repeat all steps from the beginning except instead of the caller/callee pair being a parent function and the sink, the parent function of the sink becomes the new callee.
+
+\begin{code}
+    \lstinputlisting[style=mangostyle]{mango-assets/code/reverse_sink_example.c}
+    \caption{An example of \rev.}
+    \label{simplerev}
+\end{code}
+
+In the case of Listing~\ref{simplerev}, \rda starts analyzing from \textit{say\_hello} and marks \textit{buf} with an unresolved value as it could contain anything at this point in the analysis as far as \rda is aware.
+\rda will trace the dependency of \textit{buf} to \textit{say\_hello}'s arguments and decide to analyze \textit{say\_hello}'s parent functions to resolve the values in \textit{buf}.
+The analysis will continue from \textit{bar}, the parent function of \textit{say\_hello}, and \rda will determine that there is no need to analyze any of \textit{bar}'s parent functions, in this case \textit{foo}, as the data in \textit{buf} is only dependent upon the result of the call to \textit{nvram\_get}.
+
+The ablation study described in Section~\ref{sec:ablation} evaluates the benefits of \rev.
+With all things equal, \rev improves analysis time by \tracePercentage.
+
+
+% ============================================================
+%  SECTION: Assumed Nonimpact
+% ============================================================
+\section{\assumed}
+\label{sec:assumed_execution}
+
+Traditional inter-function data-flow analysis cannot effectively analyze firmware at scale.
+One fundamental problem is that forward inter-function data-flow analysis usually must enter and analyze every callee; otherwise, it misses the artifacts that the callee generates.
+However, consider well-formed C programs where functions all have clean input/output interfaces and are defined by their arguments and return variables: in this case, we may safely skip the analysis of certain callees if pointers to the values and variables that we care about are not passed into these functions.
+Skipping these callees means that we can consider them a black-box, and that we cannot capture any information inside them.
+This is acceptable because \rda only cares about the effects that would impact the values that are being tracked.
+
+Therefore, we propose \emph{\assumed}, a best-effort execution strategy for function callees during data-flow analysis.
+Selectively analyzing callees significantly reduces the analysis time of \rda.
+
+\input{mango-assets/algorithms/assumed_exec}
+
+Algorithm~\ref{alg:assumed-exec} describes the process of \assumed.
+When \rda analyzes a new function $A$, it recovers calling convention, prototype, and accessed global variables for each callee that $A$ calls.
+With calling conventions and prototypes of callees, \rda has enough information to determine, at every call site, if (1) any pointer that points to values and variables that \rda tracks is passed to the callee function, or (2) any values that the callee function returns and is ultimately used by the sink in some form.
+When neither situation holds, we assume the call will not impact the values and variables that \rda tracks and skip the call.
+
+TChecker~\cite{luo2022tchecker} discusses a similar technique to \assumed.
+The novelty in \mango lies in adapting the technique for binaries, whereas TChecker only works on PHP applications.
+Achieving this in binaries is significantly more challenging compared to PHP source code because high-level semantic information, such as data structures, are discarded during compilation.
+Additionally, analyzing binary code requires reasoning about binary-specific features such as calling conventions, function prototypes, and precisely tracking data flows.
+Further, \mango works on binaries of multiple architectures, each with nuances, further increasing the difficulty.
+
+While \rda caches the calling conventions and prototypes for callee functions, it must determine whether to skip a call at each call site.
+The decision to skip a callsite depends on the value of the arguments to the callee and if those values are mutable as \rda progresses, making the decision heavily dependent on the context of the call.
+
+\smallskip
+\noindent
+\textbf{Loss of soundness.}
+The fundamental assumptions underpinning \assumed are that (1) all callees are well-formed (i.e., they will not add a constant to the stack pointer and use it to overwrite values that belong to the caller's stack frame) and (2) all recovered calling conventions, prototypes, and accesses to global variables are accurate.
+These assumptions do not always hold for stripped binaries, especially when structs (not pointers to structs) are in use, where \rda frequently recovers incorrect calling conventions and prototypes.
+Another error source is global struct member accesses, where it is difficult to determine the size of global structures, leading to incorrect assumptions of what ranges of data a callee function may access.
+Our evaluation shows that \assumed works well in most cases, and we hope future advances in binary analysis research will alleviate these issues and reduce the loss of soundness.
+
+
+% ============================================================
+%  SECTION: Alert Ranking
+% ============================================================
+\section{From Alerts to \trupoc{}s}
+\label{sec:alert-ranking}
+
+When disclosing a vulnerability to vendors, they often require a PoC to demonstrate that the vulnerability exists and is triggerable.
+As such, \mango focuses on finding \trupoc{}s.
+We design a filtering system in \mango that takes vulnerability alerts it finds and generates \trupoc{}s.
+These vulnerabilities have clearly defined paths through single or multiple programs stemming from user-controlled sources to sinks.
+
+During static analysis described in Section~\ref{sec:rda}, we build a dependency graph of data flows from all sources to sinks.
+We use this dependency graph to discover and categorize possible interesting sources of input.
+
+We categorize potential external data sources into five categories:
+\textit{file\_ops} consists of file operations, such as \texttt{fgets}, \texttt{fread}, etc.
+\textit{network\_ops} covers \texttt{socket}.
+\textit{env\_ops} contains all references to \texttt{frontend\_params}, \texttt{getenv} and \texttt{nvram\_get} style operations, which retrieve stored data.
+\textit{argv} denotes paths that appear to originate from a program's command line.
+Finally, \textit{unknown} is a category used for all data from any sources not listed above.
+
+In the context of firmware, it is easy to identify sources for \textit{env\_ops}.
+If the \textit{env\_op} of an alert has a known location that sets its value or it is determined to be a user-controllable \texttt{frontend\_param}, then \mango will report the alert as a \trupoc.
+
+
+% ============================================================
+%  SECTION: Environment Resolution
+% ============================================================
+\section{Environment Resolution}
+\label{sec:environment}
+
+A key advancement that \karonte suggested is modeling multi-binary interactions through analyzing Inter Process Communications (IPCs).
+During multi-binary data-flow analysis, \karonte propagates constraints from source binaries to sink binaries, including environment information extracted along the way.
+The environment resolution in \mango employs a similar tactic.
+However, \mango does not perform symbolic exploration or propagate constraints across binaries that interact through IPCs.
+Instead, \mango directly links setter values and getter variables during data-flow analysis, which achieves \emph{cross-binary} vulnerability sink resolution.
+Our solution is more scalable than \karonte because it avoids path explosion issues in symbolic exploration and runtime overhead involved in constraint solving.
+\mango also applies the same environment resolution approach to front-end keywords analysis that \satc pioneered.
+
+
+% ============================================================
+%  SECTION: Implementation
+% ============================================================
+\section{Implementation}
+\label{sec:implementation}
+
+We implemented the \mango prototype in approximately 9,500 lines of Python code.
+The multi-binary analysis for finding NVRAM entries and environment variables as well as \rda was built on top of angr~\cite{shoshitaishvili2016sok}, a widely used multi-architecture binary analysis framework.
+The core of \mango includes the IPC and front-end variable identification and the data-flow analysis on firmware binaries.
+\mango supports all architectures and platforms that angr supports, e.g., X86, AMD64, ARM, AArch64, MIPS, PowerPC, etc.
+We also implement a set of scripts to enable the parallelization of \mango analysis in local Docker containers or a Kubernetes cluster.
+
+
+% ============================================================
+%  SECTION: Evaluation
+% ============================================================
+\section{Evaluation}
+\label{sec:evaluation}
+
+We evaluated \mango using firmware running on real-world routers to answer the following research questions:
+\smallskip
+
+\noindent
+\textbf{RQ1.}
+How effective and efficient is \mango compared to \satc at identifying vulnerabilities on real-world firmware?
+
+\noindent
+\textbf{RQ2.}
+How do the scalability optimizations \rev and \assumed impact scalability and precision?
+
+\noindent
+\textbf{RQ3.}
+How does \mango perform on a significantly large-scale dataset of firmware (100$\times$ larger than what was used in prior work)?
+
+\subsection{Datasets}
+We evaluate \mango on three different firmware datasets.
+
+\smallskip
+\noindent
+\emph{\karonteDataset.}
+The \karonteDataset\footnote{\url{https://github.com/ucsb-seclab/karonte\#dataset}} contains 49 firmware samples across four different vendors (Netgear, D-Link, TP-Link, and Tenda).
+There are \mangoCompTotalAnalyzedBins binaries in all of these firmware samples.
+
+\smallskip
+\noindent
+\emph{\satcHandPickDataset.}
+\satc also compared against \karonte on seven additional firmware images from Netgear, D-Link, and Tenda.
+As such, we will compare against \satc on these seven additional images containing \satcManTotalBinAmount binaries in total.
+
+\smallskip
+\noindent
+\emph{\largeScaleDataset.}
+We use the dataset that Greenhouse uses~\cite{greenhouse}.
+This dataset comprises \ldsize firmware samples from nine different vendors: Netgear, Asus, Belkin, Linksys, TPlink, Trendnet, Tenda, D-Link, and ZyXEL containing over 385,000 binaries.
+
+\subsection{Methodology}
+\label{sec:eval-methodology}
+
+For every dataset, we run \mango on each ELF binary in the firmware sample that contains a vulnerability sink.
+In this evaluation, we only compare against \satc and not \karonte as \satc strictly improves upon the amount of vulnerabilities found per firmware image compared to \karonte.
+
+\subsubsection{Vulnerability Confirmation}
+
+Where possible, we manually analyze a subset of \mango's \trupoc{}s to determine which are true positives (actual vulnerabilities) and which are false positives (not vulnerable).
+The \trupoc{}s are considered true positives if an attacker in our threat model (Section~\ref{sec:threat_model}) can exploit the vulnerability as a user connected to the device with credentials.
+We have generated PoCs and successfully exploited \MangoPoCnum vulnerabilities based on our \trupoc{}s.
+We are working with vendors to responsibly disclose these vulnerabilities.
+
+\subsection{\karonteDataset Results}
+\input{mango-assets/tables/mango_vs_satc}
+Table~\ref{tab:mango_satc} shows the results of \mango and \satc on the \karonteDataset.
+After analyzing \mangoCompTotalAnalyzedBins binaries over \mangoCompTotalTimeHours hours, \mango generated \mangoCompTotalAlerts \trupoc{}s.
+This compares to \satc analyzing \satcAnalyzedBinaries binaries in \satcCompTotalTimeHours hours and generated \satcCompTotalAlerts \trupoc{}s.
+
+\toolname achieves comparative speeds to \satc despite analyzing \mangoKaronteBinaries binaries vs \satc's analysis of \satcAnalyzedBinaries binaries.
+The speed of our analysis, despite the scope of our threat model, is attributed to our contributions of \assumed and \rev optimizations (demonstrated through an ablation study in Section~\ref{sec:ablation}).
+
+To better understand \mango{}'s effectiveness, we manually analyzed a subset of the generated \trupoc{}s.
+Table~\ref{tab:mango_manual} shows the results of our manual analysis.
+We randomly sampled \manualAnalysisCmdInjTotal  \mango command injection \trupoc{}s and manually verified them.
+\manualAnalysisCmdInjTrueTP were true positives, with a \manualAnalysisCmdInjTPRatio true positive rate, \manualAnalysisCmdInjTrueFP were false positives, with a \manualAnalysisCmdInjFPRatio false positive rate.
+With the addition of \trupoc{}s, \mango's \manualAnalysisCmdInjTPRatio true positive rate is higher than \satc's at 32.77\%.
+
+We also randomly sampled \manualAnalysisOverflowTotal \mango buffer overflow \trupoc{}s and verified them.
+\mango found \manualAnalysisOverflowTrueTP and \manualAnalysisOverflowTrueFP, giving it a true positive rate of \manualAnalysisOverflowTPRatio.
+
+Our manual analysis of the buffer overflow results found several cases where \mango identified a vulnerability that \karonte or \satc could not (due to their reliance on the Binary Dependence Graph).
+Our motivating example (Listing~\ref{dlnad_vuln}) showcases this exact issue.
+
+\subsubsection{Baseline Comparison}
+\label{sec:baseline}
+\input{mango-assets/tables/sink_occurences}
+
+Taint-style vulnerability analysis is usually paired with the inherent worry of whether the analysis itself has any effect---with the level of vulnerabilities that we identify, would a na\"{\i}ve approach to generate a \trupoc on any vulnerable sink function call be just as effective?
+To answer this question, we designed a na\"{\i}ve baseline approach.
+
+The baseline approach marks every vulnerable sink function call as a potential vulnerability.
+However, the user's effort does not stop there, as they must verify the vulnerabilities by analyzing the context of the vulnerable sink function call.
+Therefore, a fair comparison is the \trupoc{}s generated by \mango compared to the number of context paths backward from a vulnerable sink function call.
+We limit the depth of the backward context traversal to 7, mimicking how far back \mango will go to find unique path contexts.
+
+Table~\ref{table:sinks} shows the results of this comparison for the command injection \mango \trupoc{}s and vulnerable context paths and the same for buffer overflows.
+\mango significantly reduces the burden on the human analyst by reducing the number of vulnerable context paths they need to reason about from \contextOverflow to \alertedOverflow for buffer overflows and \contextCmdi to \alertedCmdi for command injections.
+
+
+\subsection{\satcHandPickDataset Results}
+\label{sec:focused_eval}
+\input{mango-assets/tables/mango_vs_satc_manual.tex}
+
+\satc evaluated their tool against 7 selected firmware, and on these firmware, \karonte produced zero true positives.
+We evaluated \mango against these same firmware images, and to do so fairly, we evaluated only on command injections just as \satc did in their foundational work.
+Table~\ref{tab:mango_satc_manual} shows the results of this experiment.
+
+\mango analyzed \satcManTotalBinAmount binaries in \mangoManTotalTimeHours hours and generated \mangoManTotalAlerts \trupoc{}s, while \satc analyzed 21 binaries in \satcManTotalTimeHours hours and generated \satcManTotalAlerts \trupoc{}s.
+\mango generated a total of \mangoManTotalTP (61\%) true positive \trupoc{}s versus \satc's \satcManTotalTP (55\%).
+In addition to more than doubling \satc's true positive \trupoc{}s, \mango also ran 90\% faster than \satc.
+
+\mango generated \mangoManTotalAlerts command inject \trupoc{}s from \mangoManTotalBins binaries whereas \satc's \satcManTotalAlerts originate from \satcManTotalBins binaries.
+There is an overlap of \satcManTotalBins binaries between \mango and \satc for these seven selected firmware.
+Therefore, the \trupoc{}s generated by the other 18 binaries that \mango found are false negatives for \satc.
+However, \satc found 11 \trupoc{}s in the seven firmware for which \mango did not generate a \trupoc, resulting in a few false negatives for \mango.
+Despite this, the reduced analysis scope induced by the Binary Dependence Graph technique introduces significant false negatives.
+\input{mango-assets/tables/mango_manual}
+
+
+
+\subsection{Ablation Study}
+\label{sec:ablation}
+
+\input{mango-assets/tables/ablation}
+To answer RQ2, we evaluated \toolname on the Netgear firmware \ablationFirmware and measured the impact of \assumed and \rev.
+All runs were done on the exact same set of binaries, and the times reported are only on binaries that were ran successfully across all options.
+As a baseline, we ran \toolname normally, enabling both \assumed and \rev.
+
+Table~\ref{table:ablation} shows the results of this analysis on the \ablationSampleBins binaries in the firmware for command injection sinks.
+\mango achieved an average execution speed of \defaultAverageMin minutes per binary and an overall run-time of \defaultTotal minutes.
+
+\subsubsection{Disabling \assumed}
+
+Theoretically, \assumed allows \mango to run faster by analyzing fewer paths and functions along the way to our sink.
+With only \assumed disabled, i.e., analyzing every path and function in-line to the sink, the runtime is \assumedTotal minutes with an average of \assumedAverageMin minutes spent on each binary.
+Thus, \assumed provided a speed increase of \assumedPercentage.
+It should be noted that \assumed also generates more \trupoc{}s and true positives than \mango without \assumed.
+
+\subsubsection{Disabling \rev}
+
+We conducted a similar analysis by disabling \rev.
+This forward tracing approach results in a decrease in speed against our \rev.
+The average runtime of a binary is \traceAverageMin minutes with a total of \traceTotal minutes.
+Enabling \rev results in a speed increase of \tracePercentage.
+This is notably faster than default \mango and generates many more \trupoc{}s and true positives.
+
+\subsubsection{Disabling Both Optimizations}
+Finally, we evaluated our approach against the standard taint approach by disabling both \assumed and \rev.
+Without these optimizations, the average time taken to analyze a binary was \allAverageMin minutes, and it took \allTotal minutes to analyze the given firmware.
+
+The number of \trupoc{}s generated for this approach is much lower than our approach of using both \assumed and \rev.
+To analyze all context sensitive paths in a timely manner, we place a timeout of six minutes on individual Sink-to-Source path analysis.
+There can be hundreds if not thousands of paths from all sinks that need to be analyzed (as Section~\ref{sec:baseline} shows).
+We used \rev to find the highest common call-depth for triggering bugs, which distills the shortest unique path to each sink.
+
+\subsection{\largeScaleDataset Results}
+
+\input{mango-assets/tables/mango_greenhouse}
+
+The \largeScaleDataset consists of largely ARM and MIPS based router firmware in addition to some NAS firmware.
+We performed the evaluation on a Kubernetes cluster composed of 2.30GHz Intel Xeon CPUs, with each process running strictly on one core and at least 5GB of RAM allocated per binary.
+
+Table~\ref{tab:mango_largescale} shows the results, and \mango analyzed \greenhouseTotalTotal binaries, generating \greenhouseTotalAlerts \trupoc{}s over a total CPU time of \greenhouseTotalTime.
+On average, \mango only took \greenhouseTotalAVGBinTime to fully analyze a binary and \greenhouseTotalAVGTime to analyze any individual firmware.
+This time per firmware is much lower than the results reported by either \satc or \karonte.
+
+
+% ============================================================
+%  SECTION: Discussion
+% ============================================================
+\section{Discussion}
+\label{sec:discussion}
+
+We discuss our view on the quality of the data set as well as the limitations of \mango in this section.
+
+\subsection{Threats to Validity}
+
+Based on our experience, there are many more taint-style vulnerabilities in IoT firmware than in traditional software.
+We believe this is partially due to the lack of proper software engineering practices in major IoT device vendors as well as the lack of security defenses in compilers and OSes for embedded devices.
+For example, many MIPS binaries that \mango analyzed did not have stack canary enabled, and the majority of MIPS CPUs do not support address space layout randomization.
+Therefore, while our proposed techniques and algorithms can apply to finding taint-style vulnerabilities in traditional software and commercial off-the-shelf (COTS) binaries, the improvement over traditional forward data-flow analysis may not apply there.
+However, given the sheer number of IoT devices in our community, \mango represents a step forward in automated firmware vulnerability analysis.
+
+We used the \karonteDataset for the sake of consistency as it is a common point that was evaluated on both \satc and \karonte.
+However, the dataset is slightly outdated as there are many more newer firmware from all of the presented vendors.
+In an attempt to combat this and show \mango is practical even on newer and larger firmware we present an evaluation based on a larger and newer dataset as shown in Table~\ref{tab:mango_largescale}.
+
+\subsection{Limitations}
+
+\noindent
+\textbf{\assumed may cause soundness losses.}
+As discussed in Section~\ref{sec:assumed_execution}, \assumed may lead to soundness issues due to incorrect or unreliable analysis results from calling convention, function prototype, and function I/O interface inference.
+
+\smallskip
+\noindent
+\textbf{Balancing between false positives and false negatives.}
+The design of \mango inherently determines that it may report false positives (i.e., vulnerability alerts that are not real vulnerabilities).
+These can be caused by broken data dependencies (usually the result of incomplete CFGs or missing edges on a CFG) or intended functionality.
+Unlike \karonte and \satc, which aim for low false positive rates, we believe that it is vital for a vulnerability detection tool to report as many \trupoc{}s as possible (i.e., lower false negatives) while keeping the false positive rate at an acceptable level.
+Many vulnerabilities that \mango finds are impossible for \karonte or \satc to find.
+
+\subsection{Future Work}
+Although \mango has significantly improved finding vulnerabilities in firmware using static analysis, there is yet more room for improvement.
+Currently, \mango focuses solely on command injections from various functions and buffer overflows resulting from \textit{strcpy}.
+The scope of covered vulnerabilities can be widened to path traversals, SQL injections, and other string-related vulnerabilities.
+
+In addition, buffer overflows from bounded operations such as \textit{strncpy}, \textit{snprintf}, and \textit{memcpy} can be introduced with some basic value set analysis.
+A more comprehensive application of value set analysis~\cite{balakrishnan2005codesurfer} allows for informed decisions on which branches should be taken to trigger a vulnerability which will improve \assumed's performance.
+This can also filter out false positive results with the bounding of buffers provided by value set analysis.

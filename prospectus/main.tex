@@ -1,0 +1,142 @@
+\documentclass[12pt]{report}
+
+% ---- Packages ----
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{titletoc}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{tocloft}
+\usepackage[numbers]{natbib}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{adjustbox}
+\usepackage{arydshln}
+\usepackage{xspace}
+\usepackage{pifont}
+\usepackage{float}
+\usepackage{listings}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+
+\usepackage{tikz}
+
+% ---- Mango Paper Commands and Data ----
+\input{commands/mango-commands}
+
+% ---- Artiphishell Paper Commands ----
+\input{commands/artiphishell-commands}
+
+% ---- Spacing ----
+\doublespacing
+\setlength{\parindent}{0.5in}
+\setlength{\parskip}{0pt}
+
+% ---- Chapter/Section Formatting ----
+% Chapter titles: match Marzieh's format (number on own line, then title)
+\titleformat{\chapter}[display]
+  {\normalfont\centering}
+  {\MakeUppercase{\chaptertitlename}\ \thechapter}
+  {0pt}
+  {\normalfont\centering\MakeUppercase}
+\titlespacing*{\chapter}{0pt}{-20pt}{20pt}
+
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalfont\normalsize\itshape}{\thesubsubsection}{1em}{}
+
+% ---- Table of Contents Formatting ----
+% Uppercase "CHAPTER" label and "Page" header matching Marzieh's style
+\renewcommand{\contentsname}{TABLE OF CONTENTS}
+\renewcommand{\listtablename}{LIST OF TABLES}
+\renewcommand{\listfigurename}{LIST OF FIGURES}
+
+% Chapter entries in TOC: normal weight with dotted leaders (Marzieh's style)
+\renewcommand{\cftchapfont}{}
+\renewcommand{\cftchappagefont}{}
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+
+% Add "Page" header to TOC
+\addtocontents{toc}{\hfill\textbf{Page}\par}
+\addtocontents{lot}{\textbf{Table}\hfill\textbf{Page}\par}
+\addtocontents{lof}{\textbf{Figure}\hfill\textbf{Page}\par}
+
+% ---- Header/Footer ----
+% Both Marzieh and Kyle use bottom-center page numbers throughout
+\setlength{\headheight}{14.5pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+% Plain style for chapter pages (same: bottom center)
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyfoot[C]{\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+
+% ---- Hyperlinks ----
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=blue!60!black,
+  urlcolor=blue!60!black
+}
+
+% ---- Graphics Path ----
+\graphicspath{{figures/}{artiphishell-assets/figures/}}
+
+% ---- Document ----
+\begin{document}
+
+% ---- Front Matter ----
+% Title page is unnumbered
+\input{frontmatter/titlepage}
+
+% Roman numbering begins here so abstract = page i (matching Marzieh)
+\pagenumbering{roman}
+
+% ---- Abstract ----
+\chapter*{ABSTRACT}
+\addcontentsline{toc}{chapter}{ABSTRACT}
+\input{frontmatter/abstract}
+
+\newpage
+
+% ---- Table of Contents ----
+\tableofcontents
+\newpage
+
+% ---- List of Tables ----
+\listoftables
+\newpage
+
+% ---- List of Figures ----
+\listoffigures
+\newpage
+
+% ---- Main Content ----
+\pagenumbering{arabic}
+
+% Add "CHAPTER" label to TOC before numbered chapter entries (Marzieh's style)
+\addtocontents{toc}{\protect\vspace{0.5em}\noindent CHAPTER\par}
+
+\input{chapters/01-introduction}
+\input{chapters/02-related-work}
+\input{chapters/03-mango}
+\input{chapters/04-artiphishell}
+\input{chapters/05-proposed-work}
+
+% ---- References ----
+\input{frontmatter/references}
+
+\end{document}

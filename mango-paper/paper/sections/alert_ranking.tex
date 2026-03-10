@@ -1,0 +1,21 @@
+\section{From Alerts to \trupoc{}s}
+\label{sec:alert-ranking}
+
+When disclosing a vulnerability to vendors, they often require a PoC to demonstrate that the vulnerability exists and is triggerable.
+As such, \mango focuses on finding \trupoc{}s.
+We design a filtering system in \mango that takes vulnerability alerts it finds and generates \trupoc{}s.
+These vulnerabilities have clearly defined paths through single or multiple programs stemming from user-controlled sources to sinks.
+
+During static analysis described in Section~\ref{sec:rda}, we build a dependency graph of data flows from all sources to sinks.
+We use this dependency graph to discover and categorize possible interesting sources of input.
+
+We categorize potential external data sources into five categories:
+\textit{file\_ops} consists of file operations, such as \texttt{fgets}, \texttt{fread}, etc.
+\textit{network\_ops} covers \texttt{socket}.
+\textit{env\_ops} contains all references to \texttt{frontend\_params}, \texttt{getenv} and \texttt{nvram\_get} style operations, which retrieve stored data.
+\textit{argv} denotes paths that appear to originate from a program's command line.
+Finally, \textit{unknown} is a category used for all data from any sources not listed above.
+
+In the context of firmware, it is easy to identify sources for \textit{env\_ops}.
+If the \textit{env\_op} of an alert has a known location that sets its value or it is determined to be a user-controllable \texttt{frontend\_param}, then \mango will report the alert as a \trupoc.
+% Although a \trupoc can have many data sources, \mango considers the highest-valued data source during filtering.

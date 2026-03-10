@@ -1,0 +1,184 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Artifact Appendix Template for Usenix Security'24 AE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\appendix
+\section{Artifact Appendix}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Abstract}
+In this paper, we propose a scaling static analysis of firmware binaries so that \emph{all} binaries can be analyzed for command injection or buffer overflows.
+To achieve this, we developed \rda, a novel binary data-flow analysis leveraging value analysis and data dependency analysis on binary code.
+Through key algorithmic optimizations in \rda, our prototype \mango achieves fast analysis without sacrificing precision.
+\mango was tested on the Karonte dataset of 49 firmware to show its performance comparability to SaTC, which we also ran on this dataset.
+\mango was also tested on the 7 firmware that were handpicked by the SaTC authors to demonstrate the versatility of \mango.
+We performed an ablation study demonstrating the performance gains in \mango come from key algorithmic improvements.
+Finally, we evaluated the scalability of \mango on 1700 firmware from the Greenhouse dataset.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Description \& Requirements}
+
+\mango can be run parallelized locally with the use of docker containers or with Kubernetes remotely.
+However, we will not give any support for running on Kubernetes, nor can we provide access to our computing resources.
+\mango will spit out many results, but for the paper, we only care about results with a score of 7 or higher.
+This score is pre-pended to the file name of every result and can easily be aggregated with the \emph{find} command.
+
+
+\subsubsection{Security, privacy, and ethical concerns}
+
+There are no risks to the evaluators while executing our artifact.
+However, it should be noted that the output of our artifact will contain potential vulnerabilities and should not be shared with the general public.
+
+\subsubsection{How to access}
+Our artifacts can be accessed on our GitHub\footnote{\url{https://github.com/sefcom/operation-mango-public/blob/f9551d187e9e8bb94785390a3f84ff8e0edf7d7d/ExperimentReplication.md}}.
+
+\subsubsection{Hardware dependencies}
+There are no specific hardware dependencies, but we suggest a sufficiently powerful machine to run the experiments.
+Our experiments were run on a Kubernetes cluster with access to 4000 cores.
+We also require at least 500GB of storage if you run all experiments.
+The large dataset experiments consume up to 400GB of disk space.
+
+\subsubsection{Software dependencies}
+Our artifact is consolidated into two Python packages, which can be pip-installed along with their supporting packages.
+We only tested our artifact on Ubuntu 22.04 x64.
+
+\subsubsection{Benchmarks}
+Here are all of the datasets we used.
+
+karonte dataset: \url{https://drive.google.com/file/d/1-VOf-tEpu4LIgyDyZr7bBZCDK-K2DHaj/view?usp=sharing} \\
+7 Firmware dataset: \url{https://www.dropbox.com/scl/fi/v7k3c2ech20l5hh6dxhdf/7_firmware.tar.gz?rlkey=lo74bd7wcgf1jmxmxlwv6j4v3&dl=0} \\
+ablation dataset: \url{https://www.dropbox.com/scl/fi/zz04neglh9d4ycsqa2c0j/ablation-firmware.tar.gz?rlkey=hwhf9tt21f7hsuzcrbrjkg08t&dl=0} \\
+greenhouse dataset: \url{https://www.dropbox.com/scl/fi/2ndob4flx6sn3a53fln83/large_dataset.tar.gz?rlkey=frgjlhwh244mqb4ua1om9atqd&dl=0} \\
+additional experiment dataset: \url{https://www.dropbox.com/scl/fi/girnzmyjaterigijmls87/additional_experiment.tar.gz?rlkey=4okv6ivbsyer6df0nc70tzz73&dl=0} \\
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Set-up}
+
+You will need to install Python3.11 or later on your machine.
+You will also need either Docker or Kubernetes to run the experiments.
+We also advise installing the artifact packages in a Python virtual environment.
+
+\subsubsection{Installation}
+
+First, git clone the repository.
+Next, cd into the repository and run the following commands: \\
+\textit{
+pip install -e . \\
+cd pipeline \\
+pip install -e . \\
+}
+
+This will install the base package 'argument\_resolver' and the 'mango\_pipeline' package which is used to run the experiments.
+
+\subsubsection{Basic Test}
+To run a simple functionality test, navigate to the root of the git repo and run the following commands: \\
+\textit{
+pip install pytest \\
+pytest \\
+}
+
+This will run the tests for the base package and all of the tests should pass.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Evaluation workflow}
+All of the reproduction steps are also available on our GitHub\footnotemark[1].
+
+\subsubsection{Major Claims}
+\begin{compactdesc}
+
+    \item[(C1):] \textit{Operation Mango achieves a greater amount of vulnerabilities found than prior workflow in a similar amount of analysis time spent.
+    This is proven by the comparison experiment (E1) described in section 11.3 on the Karonte Dataset illustrated in table 1.}
+
+    \item[(C2):] \textit{Operation Mango finds more vulnerabilities by analyzing more binaries than prior work (E2) in the same time or less as shown in section 11.4 and table 3.}
+
+    \item[(C3):] \textit{Operation Mango's core contributions of assumed nonimpact and sink-to-source analysis are proved in the ablation experiment (E3) from section 11.5 and illustrated in table 5.}
+
+    \item[(C4):] \textit{Operation Mango is extremely scalable. Section 11.6 performs a large-scale evaluation (E4) across 1700 firmware, whose results are found in table 6.}
+
+\end{compactdesc}
+
+\subsubsection{Experiments}
+Please note that we cannot provide support for running any of the experiments on Kubernetes or using any of the compute resources we used for the paper.
+
+% use paralist for more compact list format: for more details check here:
+% https://texfaq.org/FAQ-complist
+\begin{compactdesc}
+
+    \item[(E1):] \textit{[Karonte Dataset Comparison] [10 human-minutes + 930 compute-hour + 5GB disk + 10GB RAM]:
+    49 firmware are used to evaluate the efficacy of Operation Mango's analysis compared to prior work.}
+
+    \begin{asparadesc}
+
+        \item[Preparation:] \textit{Have both docker and python3.11 installed in a Ubuntu 22.04 environment.
+        Download the karonte-dataset.tgz and unpack it.}
+
+        \item[How to:]  \textit{Please refer to the Table 1 replication steps on our github\footnotemark[1].}
+
+        \item[Results:] \textit{
+            Run the show\_table.py script from our GitHub\footnotemark[1] to interpret the results. \\
+            Depending on your compute power, your run-time may be longer than in Table 1, but the amount of TruPoCs and binaries analyzed should be similar. \\
+            To differentiate between command injection and overflow results, use the \textit{--status} flag on \textit{mango-pipeline}.
+        }
+    \end{asparadesc}
+
+    \item[(E2):] \textit{[7 Manual Firmware Analysis] [10 human-minutes + 8 compute-hour + 5GB disk + 10GB RAM]: 
+    In this experiment, we analyzed 7 firmware from the SaTC Paper\footnote{\url{https://www.usenix.org/system/files/sec21fall-chen-libo.pdf}} and showed we found vulnerabilities in binaries they did not analyze.}
+
+    \begin{asparadesc}
+        \item[Preparation:] \textit{Have both docker and python3.11 installed in a Ubuntu 22.04 environment.
+        Download the 7\_firmware.tar.gz and unpack it.}
+
+        \item[How to:]  \textit{Please refer to the Table 3 replication steps on our github\footnotemark[1].}
+
+        \item[Results:] \textit{Run the show\_table.py script from our github\footnotemark[1] with the flag \textit{--show-firmware} to interpret the results.
+        The results should be similar to those in Table 3 of the paper, but depending on the combination of computer power and timeout length, the results may differ slightly.}
+    \end{asparadesc}
+
+    \item[(E3):] \textit{[Ablation Study] [10 human-minutes + 3 compute-hour + 1GB disk + 10GB RAM]: 
+    In this experiment, we analyze the R6400V2 firmware, turning on and off different combinations of assumed nonimpact and sink-to-source analysis to show the impact of our contributions.
+    The results should be similar to Table 5 in the paper, but depending on the combination of computer power and timeout length, the results may differ slightly.}
+
+    \begin{asparadesc}
+        \item[Preparation:] \textit{Have both docker and python3.11 installed in a Ubuntu 22.04 environment.
+        Download the ablation-firmware.tar.gz and unpack it.}
+
+        \item[How to:]  \textit{Please refer to the Table 5 replication steps on our github\footnotemark[1].}
+
+        \item[Results:] \textit{Run the ablation.py script from our github\footnotemark[1] to interpret the results.}
+    \end{asparadesc}
+
+    \item[(E4):] \textit{[Large Scale Analysis] [10 human-minutes + 8157 compute-hour + 400GB disk + 10GB RAM]: 
+    In this experiment, we analyze 1700 firmware from the greenhouse dataset from a wide variety of different vendors.
+    The results should be similar to those in Table 6 of the paper, but depending on the combination of computer power and timeout length, the results may differ slightly.}
+
+    \begin{asparadesc}
+        \item[Preparation:] \textit{Have both docker and python3.11 installed in a Ubuntu 22.04 environment.
+        Download the large\_dataset.tar.gz and unpack it.}
+
+        \item[How to:]  \textit{Please refer to the Table 5 replication steps on our github\footnotemark[1].}
+
+        \item[Results:] \textit{Run the show\_table.py script from our github\footnotemark[1] to interpret the results.}
+    \end{asparadesc}
+
+
+\end{compactdesc}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Notes on Reusability}
+\label{sec:reuse}
+Operation Mango is built upon angr and can be extended for other static analysis tasks.
+The base \textit{mango} can be used for non-firmware static analysis out of the box.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Version}
+%%%%%%%%%%%%%%%%%%%%
+% Obligatory.
+% Do not change/remove.
+%%%%%%%%%%%%%%%%%%%%
+Based on the LaTeX template for Artifact Evaluation V20231005. Submission,
+reviewing and badging methodology followed for the evaluation of this artifact
+can be found at \url{https://secartifacts.github.io/usenixsec2024/}.

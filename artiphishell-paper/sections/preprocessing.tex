@@ -1,0 +1,40 @@
+\section{Preprocessing}
+\label{preprocessing}
+
+The analysis process starts when \artiphishell is given a ``task'' from the competition organizers.
+The task contains some metadata that uniquely identifies the task and states the acceptable time frame for analysis, as well as several archives, such as the OSS-Fuzz bundle for the target application, a baseline repository, and, in the case of a delta-mode task, the diff containing the new code that has been introduced)
+
+\subsection{\builder}
+The first step after receiving the task is performed by the \builder agent.
+\builder creates various artifacts, depending on the language of the target application.
+\begin{description}
+\item[Canonical build:] the compiled application in its standard format.
+\item[Debug build:] a version of the application with debug symbols.
+\item[\afluzzer build:] a version of the application with the instrumentation required by AFL++.
+\item[\jazzmine build:] a version of the application with the instrumentation required by Jazzer.
+\item[Coverage build:] a version of the application with coverage specific information that is used to produce detailed coverage reports when a specific seed is sent to a harness.
+\end{description}
+
+\subsection{\analyzer}
+After \builder creates the artifacts previously described, the \analyzer agent extracts metadata about the target and stores it in the \analysisgraph database.
+
+The following are some of the type of data that are extracted:
+\begin{description}
+\item[WLLVMbear:] contains all the compiler commands executed during the building of the various artifacts.
+\item[CodeQL:] contains the CodeQL database for the target, and the results of running a set of queries to extract the control-flow graph (CFG), the data-flow graph (DFG), and the code-property graph (CPG). 
+\item[Seed Corpus:] an initial pre-determined corpus of input seeds based on popular formats and protocols.
+\end{description}
+The \analyzer agent is also responsible for the identification of the endpoints that represent harnesses and will be used in the vulnerability analysis process.
+
+\subsection{\indexer}
+After the \analyzer has completed its tasks, the \indexer agent creates a separate repository of function-related metadata.
+This repository is critical for the efficient and consistent access to function-related information across all agents.
+This is achieved using CLANG's and ANTLR's indexing capabilities to produce a list of functions with a unique identifier and a clear association between functions and their locations in the code base.
+This information is exposed using a dedicated API with caching to improve the speed and scalability of access.
+
+
+
+
+
+
+

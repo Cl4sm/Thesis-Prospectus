@@ -1,0 +1,9 @@
+\section{Implementation}
+\label{sec:implementation}
+
+We implemented the \mango prototype in approximately 9,500 lines of Python code.
+The multi-binary analysis for finding NVRAM entries and environment variables as well as \rda was built on top of angr~\cite{shoshitaishvili2016sok}, a widely used multi-architecture binary analysis framework.
+The core of \mango includes the IPC and front-end variable identification and the data-flow analysis on firmware binaries.
+\mango supports all architectures and platforms that angr supports, e.g., X86, AMD64, ARM, AArch64, MIPS, PowerPC, etc.
+% There are two separate components in \mango that allow us to run our experiments.
+We also implement a set of scripts to enable the parallelization of \mango analysis in local Docker containers or a Kubernetes cluster.

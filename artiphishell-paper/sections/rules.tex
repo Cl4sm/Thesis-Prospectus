@@ -1,0 +1,99 @@
+The overall score for the competition is the sum of all the challenge rounds performed by the Cyber Reasoning System (CRS).
+Each round has a fixed duration $CT$ (which is usually between 6 hours and 12 hours), and each event is marked with the time remaining in the duration of the challenge, $RT$.
+
+The score for a challenge round (CS) is determined by various factors:
+\begin{equation}
+CS = AM * (VDS + PRS + SAS + BDL),
+\end{equation}
+where $AM$ is the Accuracy Multiplier, $VDS$ is the Vulnerability Discovery Score, $PRS$ is the Program Repair Score, $SAS$ is the SARIF Assessment Score, and $BDL$ is the Bundle Score.
+
+The Accuracy Multiplier represents and incentivizes the accuracy of the CRS. The Accuracy Multiplier is computed as follows:
+\begin{equation}
+AM = 1 - (1 - r)^4,
+\end{equation}
+where $r$ is the ratio of accurate submissions to all submissions:
+\begin{equation}
+r = (accurate)/(accurate + inaccurate).
+\end{equation}
+
+The $VDS$ represents the CRS' ability to find vulnerabilities and produce inputs that trigger them (PoVs), and it is calculated as the sum of all distinct PoV values:
+\begin{equation}
+VDS = \sum value_{PoV}, \forall PoV \in ScoringPoVs.
+\end{equation}
+The set of $ScoringPoVs$ is the set of unique vulnerabilities identified. 
+If a PoV does not trigger a vulnerability, its value is 0.
+If a submitted PoV is considered a duplicate of a previously submitted PoV, then the previous PoV is ignored, and the new PoV is considered as the entry for the associated vulnerability.
+This is important as the submission time affects the overall score.
+\begin{equation}
+value_{PoV} = 2 * (0.5 + RT/(2*CT)).    
+\end{equation}
+Note that if a PoV is overwritten by a subsequent PoV, this does not affect the accuracy multiplier.
+
+The $PRS$ represents the ability of the CRS to generate effective patches.
+The score is calculated as the sum of all the scored patches:
+\begin{equation}
+PRS = \sum value_{patch}, \forall patch \in ScoringPatches.
+\end{equation}
+
+A patch that does not remediate any challenge vulnerability,  fails to build, or does not pass the functionality tests has a value of 0.
+Usually, the evaluation of a patch by the organizers takes around 15 minutes.
+The functionality tests for a patch are sometimes included with the challenge, but not always.
+If a patch can be applied, remediates one or more challenge vulnerabilities, and passes the functionality tests, its value is the following.
+\begin{equation}
+value_{patch} = 6 * (0.5 + RT/(2*CT)).
+\end{equation}
+That is, similar to the case of PoVs, the value of a patch diminishes when it is submitted later in the round.
+
+For a patch to be evaluated in the scoring process, it has to solve all variant collected PoVs created during the challenge round. 
+This means that a patch submitted by system A could be invalidated because it does not block the PoV submitted by system B for the same vulnerability.
+Note that if a patch is invalidated, it will contribute (negatively) to the Accuracy Multiplier.
+
+The SARIF Assessment Score ($SAS$) measures the ability of the CRS to validate a SARIF report.
+\begin{equation}
+SAS = \sum value_{assessment}, \forall assessment \in ScoringAssessments.
+\end{equation}
+
+If a SARIF assessment is incorrect, then the corresponding value is 0.
+The time penalty for the assessment is determined with respect to the remaining challenge time when the SARIF report was made public, which is $SRT$. 
+If a SARIF assessment is correct, its value is the following:
+\begin{equation}
+value_{assessment} = 1 * (0.5 + RT/(2*SRT)).
+\end{equation}
+
+If multiple assessments are submitted for the same report, only the lastl be scored, and the previous ones will negatively affect the accuracy.
+
+The Bundle Score ($BDL$) represents the ability of the CRS to associate PoVs, patches, and SARIF reports.
+\begin{equation}
+BDL = \sum value_{bundle}, \forall bundle \in ScoringBundles,
+\end{equation}
+where $ScoringBundles$ are bundles that contain two or more PoVs, patches, or SARIF reports.
+
+The value of the bundle is computed as follows:
+\begin{equation}
+value_{bundle} = 0.5 * (value_{PoV} + value_{patch}) + b, 
+\end{equation}
+if both the PoV and patch are supplied; otherwise:
+\begin{equation}
+value_{bundle} = b,
+\end{equation}
+where b takes the following values:
+\begin{description}
+    \item[0:] if no SARIF ID is included in the bundle, or the bundle contains incorrect pairings;
+
+    \item[1:] if the bundle has the correct pairing for the SARIF ID and the PoV but there is no patch included;
+
+    \item[2:] if the bundle has the correct pairing for the SARIF ID and the patch but has no PoV;
+
+    \item[3:] if the bundle contains correct pairings for SARIF ID, PoV, and patch.
+\end{description}
+
+The definition of a correct pairing is as follows:
+\begin{itemize}
+\item For a PoV and patch pairing the patch must remediate the PoV;
+\item For a PoV and SARIF ID pairing, the PoV must crash the vulnerability defined in the SARIF report;
+\item For a patch and SARIF ID pairing, the patch must fix the vulnerability described in the SARIF report;
+\item For a PoV, patch, and SARIF ID pairing all of the above conditions must hold.
+\end{itemize}
+At the end of the challenge round, there can be only one bundle submitted per SARIF ID or challenge vulnerability.
+
+Most importantly, if a bundle has an incorrect pairing, its value is detracted from the overall score, highlighting the fact that bundles represent high-risk/high-reward components of the score.

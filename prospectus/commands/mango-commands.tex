@@ -1,0 +1,517 @@
+% ============================================================
+%  MANGO COMMANDS
+%  Custom commands and data constants from the Operation Mango
+%  paper (USENIX Security 2024)
+% ============================================================
+
+% ---- Custom Names ----
+\newcommand{\toolname}{Mango\xspace}
+\newcommand{\mango}{Mango\xspace}
+\newcommand{\trupoc}{TruPoC\xspace}
+\newcommand{\karonte}{Karonte\xspace}
+\newcommand{\satc}{SaTC\xspace}
+\newcommand{\rda}{\textsc{MangoDFA}\xspace}
+\newcommand{\rev}{Sink-to-Source Analysis\xspace}
+\newcommand{\assumed}{Assumed Nonimpact\xspace}
+\newcommand{\richexpr}{Rich Expression\xspace}
+\newcommand{\richexprs}{Rich Expressions\xspace}
+
+% ---- Dataset Names ----
+\newcommand{\karonteDataset}{\karonte Dataset\xspace}
+\newcommand{\satcHandPickDataset}{\satc Selected Dataset\xspace}
+\newcommand{\largeScaleDataset}{Large-scale Dataset\xspace}
+
+% ---- Formatting Helpers ----
+\newcommand\parheader{\noindent\textbf}
+
+% ---- Symbols ----
+\newcommand{\tick}{\ding{51}}
+\newcommand{\cross}{\ding{55}}
+\newcommand{\gtick}{\textcolor{tick-green}{\tick}}
+\newcommand{\rcross}{\textcolor{cross-red}{\cross}}
+
+% ---- Colors (for ablation table) ----
+\definecolor{tick-green}{RGB}{33,181,33}
+\definecolor{cross-red}{RGB}{206,16,16}
+
+% ---- Code Listing Environment ----
+% Replaces the minted-based code float from the paper with a listings-based version
+\newenvironment{code}{\begin{figure}[tb]}{\end{figure}}
+
+% ---- Listing Style ----
+\lstdefinestyle{mangostyle}{
+    frame            = tb,
+    keepspaces       = true,
+    columns          = flexible,
+    basicstyle       = {\footnotesize\ttfamily},
+    backgroundcolor  = \color{white},
+    breaklines       = true,
+    showstringspaces = false,
+    language         = C,
+    keywordstyle     = \color{blue},
+    stringstyle      = \color{red},
+    commentstyle     = \color{teal},
+    numbers          = left,
+    firstnumber      = 1,
+    numberstyle      = \scriptsize\color{black},
+    captionpos       = b,
+    numbersep        = 5pt
+}
+
+% ---- Basic Numbers ----
+\newcommand{\sdsize}{7\xspace}
+\newcommand{\ldsize}{1,698\xspace}
+\newcommand{\ldvendors}{nine\xspace}
+\newcommand{\karontesize}{49\xspace}
+\newcommand{\satcsize}{39\xspace}
+\newcommand{\mangoavgtime}{8\xspace}
+\newcommand{\satcavgtime}{11297\xspace}
+\newcommand{\MangoPoCnum}{70\xspace}
+
+% ---- Performance Data ----
+\newcommand{\mangocmdiTP}{57\%\xspace}
+\newcommand{\mangooverflowTP}{38\%\xspace}
+\newcommand{\mangoKaronteBinaries}{6,920\xspace}
+\newcommand{\mangoBinariesvsSaTC}{27\xspace}
+\newcommand{\SaTConKaronteHours}{870\xspace}
+\newcommand{\KaronteonKaronteHours}{463\xspace}
+\newcommand{\karonteTimePerBin}{3.0\xspace}
+\newcommand{\SaTCTimePerBin}{6.56\xspace}
+\newcommand{\totalDatasetBinaries}{8,561\xspace}
+
+% ---- SaTC vs Mango Comparison Data ----
+% Mango Netgear
+\newcommand{\mangoCompNetgearAlerts}{2,089\xspace}
+\newcommand{\mangoCompNetgearCmdInjAlerts}{143\xspace}
+\newcommand{\mangoCompNetgearOverflowAlerts}{1,946\xspace}
+\newcommand{\mangoCompNetgearTime}{502:29h\xspace}
+\newcommand{\mangoCompNetgearAnalyzedBins}{1,950\xspace}
+\newcommand{\mangoCompNetgearAlertedBins}{127\xspace}
+% Mango DLink
+\newcommand{\mangoCompDLinkAlerts}{36\xspace}
+\newcommand{\mangoCompDLinkCmdInjAlerts}{0\xspace}
+\newcommand{\mangoCompDLinkOverflowAlerts}{39\xspace}
+\newcommand{\mangoCompDLinkTime}{178:08h\xspace}
+\newcommand{\mangoCompDLinkAnalyzedBins}{696\xspace}
+\newcommand{\mangoCompDLinkAlertedBins}{18\xspace}
+% Mango TPLink
+\newcommand{\mangoCompTPLinkAlerts}{56\xspace}
+\newcommand{\mangoCompTPLinkCmdInjAlerts}{0\xspace}
+\newcommand{\mangoCompTPLinkOverflowAlerts}{56\xspace}
+\newcommand{\mangoCompTPLinkTime}{192:32h\xspace}
+\newcommand{\mangoCompTPLinkAnalyzedBins}{610\xspace}
+\newcommand{\mangoCompTPLinkAlertedBins}{8\xspace}
+% Mango Tenda
+\newcommand{\mangoCompTendaAlerts}{129\xspace}
+\newcommand{\mangoCompTendaCmdInjAlerts}{73\xspace}
+\newcommand{\mangoCompTendaOverflowAlerts}{56\xspace}
+\newcommand{\mangoCompTendaTime}{73:11h\xspace}
+\newcommand{\mangoCompTendaAnalyzedBins}{343\xspace}
+\newcommand{\mangoCompTendaAlertedBins}{21\xspace}
+% Mango Total
+\newcommand{\mangoCompTotalAlerts}{2,310\xspace}
+\newcommand{\mangoCompTotalCmdInjAlerts}{216\xspace}
+\newcommand{\mangoCompTotalOverflowAlerts}{2,094\xspace}
+\newcommand{\mangoCompTotalTime}{\mangoCompTotalTimeHours:\mangoCompTotalTimeMins\xspace}
+\newcommand{\mangoCompTotalTimeHours}{946\xspace}
+\newcommand{\mangoCompTotalTimeMins}{22\xspace}
+\newcommand{\mangoCompTotalAnalyzedBins}{3,599\xspace}
+\newcommand{\mangoCompTotalAlertedBins}{174\xspace}
+
+% SaTC Netgear
+\newcommand{\satcCompNetgearAlerts}{138\xspace}
+\newcommand{\satcCompNetgearCmdInjAlerts}{42\xspace}
+\newcommand{\satcCompNetgearOverflowAlerts}{96\xspace}
+\newcommand{\satcCompNetgearTime}{450:27\xspace}
+\newcommand{\satcCompNetgearAnalyzedBins}{50\xspace}
+\newcommand{\satcCompNetgearAlertedBins}{22\xspace}
+% SaTC DLink
+\newcommand{\satcCompDLinkAlerts}{2\xspace}
+\newcommand{\satcCompDLinkCmdInjAlerts}{0\xspace}
+\newcommand{\satcCompDLinkOverflowAlerts}{2\xspace}
+\newcommand{\satcCompDLinkTime}{174:34\xspace}
+\newcommand{\satcCompDLinkAnalyzedBins}{18\xspace}
+\newcommand{\satcCompDLinkAlertedBins}{7\xspace}
+% SaTC TPLink
+\newcommand{\satcCompTPLinkAlerts}{0\xspace}
+\newcommand{\satcCompTPLinkCmdInjAlerts}{0\xspace}
+\newcommand{\satcCompTPLinkOverflowAlerts}{0\xspace}
+\newcommand{\satcCompTPLinkTime}{153:55\xspace}
+\newcommand{\satcCompTPLinkAnalyzedBins}{42\xspace}
+\newcommand{\satcCompTPLinkAlertedBins}{17\xspace}
+% SaTC Tenda
+\newcommand{\satcCompTendaAlerts}{4\xspace}
+\newcommand{\satcCompTendaCmdInjAlerts}{2\xspace}
+\newcommand{\satcCompTendaOverflowAlerts}{2}
+\newcommand{\satcCompTendaTime}{82:02\xspace}
+\newcommand{\satcCompTendaAnalyzedBins}{21\xspace}
+\newcommand{\satcCompTendaAlertedBins}{5\xspace}
+% SaTC Total
+\newcommand{\satcCompTotalAlerts}{144\xspace}
+\newcommand{\satcCompTotalCmdInjAlerts}{44\xspace}
+\newcommand{\satcCompTotalOverflowAlerts}{100\xspace}
+\newcommand{\satcCompTotalTimeHours}{860\xspace}
+\newcommand{\satcCompTotalTimeMin}{58\xspace}
+\newcommand{\satcCompTotalTime}{\satcCompTotalTimeHours:\satcCompTotalTimeMin\xspace}
+\newcommand{\satcCompTotalAnalyzedBins}{131\xspace}
+\newcommand{\satcCompTotalAlertedBins}{52\xspace}
+\newcommand{\satcTotalAnalyzedBins}{131\xspace}
+\newcommand{\karonteTotalAnalyzedBins}{312\xspace}
+
+% ---- Ablation Data (Netgear) ----
+% Default
+\newcommand{\ablationdefaultNetGearbinaries}{191\xspace}
+\newcommand{\ablationdefaultNetGearbinarieswithalerts}{38\xspace}
+\newcommand{\ablationdefaultNetGearbinariesresolved}{28\xspace}
+\newcommand{\ablationdefaultNetGearnosinks}{125\xspace}
+\newcommand{\ablationdefaultNetGeartotalalerts}{285\xspace}
+\newcommand{\ablationdefaultNetGearerrors}{0\xspace}
+\newcommand{\ablationdefaultNetGeartimeouts}{0\xspace}
+\newcommand{\ablationdefaultNetGearoom}{0\xspace}
+\newcommand{\ablationdefaultNetGearAVGTimePerBin}{139.90\xspace}
+\newcommand{\ablationdefaultNetGeartimetaken}{2:08:24\xspace}
+% Assumed disabled
+\newcommand{\ablationassumedNetGearbinaries}{191\xspace}
+\newcommand{\ablationassumedNetGearbinarieswithalerts}{35\xspace}
+\newcommand{\ablationassumedNetGearbinariesresolved}{26\xspace}
+\newcommand{\ablationassumedNetGearnosinks}{125\xspace}
+\newcommand{\ablationassumedNetGeartotalalerts}{141\xspace}
+\newcommand{\ablationassumedNetGearerrors}{0\xspace}
+\newcommand{\ablationassumedNetGeartimeouts}{0\xspace}
+\newcommand{\ablationassumedNetGearoom}{0\xspace}
+\newcommand{\ablationassumedNetGearAVGTimePerBin}{252.07\xspace}
+\newcommand{\ablationassumedNetGeartimetaken}{3:51:06\xspace}
+% Trace disabled
+\newcommand{\ablationtraceNetGearbinaries}{191\xspace}
+\newcommand{\ablationtraceNetGearbinarieswithalerts}{32\xspace}
+\newcommand{\ablationtraceNetGearbinariesresolved}{36\xspace}
+\newcommand{\ablationtraceNetGearnosinks}{125\xspace}
+\newcommand{\ablationtraceNetGeartotalalerts}{206\xspace}
+\newcommand{\ablationtraceNetGearerrors}{0\xspace}
+\newcommand{\ablationtraceNetGeartimeouts}{0\xspace}
+\newcommand{\ablationtraceNetGearoom}{0\xspace}
+\newcommand{\ablationtraceNetGearAVGTimePerBin}{206.74\xspace}
+\newcommand{\ablationtraceNetGeartimetaken}{3:16:28\xspace}
+% All disabled
+\newcommand{\ablationallNetGearbinaries}{191\xspace}
+\newcommand{\ablationallNetGearbinarieswithalerts}{26\xspace}
+\newcommand{\ablationallNetGearbinariesresolved}{30\xspace}
+\newcommand{\ablationallNetGearnosinks}{125\xspace}
+\newcommand{\ablationallNetGeartotalalerts}{136\xspace}
+\newcommand{\ablationallNetGearerrors}{0\xspace}
+\newcommand{\ablationallNetGeartimeouts}{0\xspace}
+\newcommand{\ablationallNetGearoom}{0\xspace}
+\newcommand{\ablationallNetGearAVGTimePerBin}{565.20\xspace}
+\newcommand{\ablationallNetGeartimetaken}{8:38:02\xspace}
+
+% ---- Sink Count Data ----
+\newcommand{\sinkTotaldoSystemCmd}{577}
+\newcommand{\sinkTotalsystem}{2,875}
+\newcommand{\sinkTotalexecvp}{79}
+\newcommand{\sinkTotalpopen}{192}
+\newcommand{\sinkTotalexecve}{27}
+\newcommand{\sinkTotalexecv}{74}
+\newcommand{\sinkTotalexecl}{47}
+\newcommand{\sinkTotalexeclp}{42}
+\newcommand{\sinkTotalstrcpy}{4,725}
+
+% ---- Alerted Sink Count Data ----
+\newcommand{\sinkAlerteddoSystemCmd}{130}
+\newcommand{\sinkAlertedsystem}{997}
+\newcommand{\sinkAlertedexecvp}{73}
+\newcommand{\sinkAlertedpopen}{214}
+\newcommand{\sinkAlertedexecve}{21}
+\newcommand{\sinkAlertedexecv}{65}
+\newcommand{\sinkAlertedexecl}{19}
+\newcommand{\sinkAlertedexeclp}{34}
+\newcommand{\sinkAlertedstrcpy}{4,141}
+
+% ---- Alerted Unique Sink Count Data ----
+\newcommand{\sinkUniquedoSystemCmd}{121}
+\newcommand{\sinkUniquesystem}{840}
+\newcommand{\sinkUniqueexecvp}{70}
+\newcommand{\sinkUniquepopen}{148}
+\newcommand{\sinkUniqueexecve}{20}
+\newcommand{\sinkUniqueexecv}{60}
+\newcommand{\sinkUniqueexecl}{19}
+\newcommand{\sinkUniqueexeclp}{34}
+\newcommand{\sinkUniquestrcpy}{3,429}
+
+% ---- Sink Percent Data ----
+\newcommand{\sinkPercentTotaldoSystemCmd}{100}
+\newcommand{\sinkPercentTotalsystem}{100}
+\newcommand{\sinkPercentTotalexecvp}{100}
+\newcommand{\sinkPercentTotalpopen}{100}
+\newcommand{\sinkPercentTotalexecve}{100}
+\newcommand{\sinkPercentTotalexecv}{100}
+\newcommand{\sinkPercentTotalexecl}{100}
+\newcommand{\sinkPercentTotalexeclp}{100}
+\newcommand{\sinkPercentTotalstrcpy}{100}
+\newcommand{\sinkPercentAlerteddoSystemCmd}{22.53}
+\newcommand{\sinkPercentAlertedsystem}{34.68}
+\newcommand{\sinkPercentAlertedexecvp}{92.40}
+\newcommand{\sinkPercentAlertedpopen}{111.46}
+\newcommand{\sinkPercentAlertedexecve}{77.78}
+\newcommand{\sinkPercentAlertedexecv}{87.84}
+\newcommand{\sinkPercentAlertedexecl}{40.43}
+\newcommand{\sinkPercentAlertedexeclp}{80.95}
+\newcommand{\sinkPercentAlertedstrcpy}{87.64}
+\newcommand{\sinkPercentUniquedoSystemCmd}{20.97}
+\newcommand{\sinkPercentUniquesystem}{28.22}
+\newcommand{\sinkPercentUniqueexecvp}{88.61}
+\newcommand{\sinkPercentUniquepopen}{77.08}
+\newcommand{\sinkPercentUniqueexecve}{74.07}
+\newcommand{\sinkPercentUniqueexecv}{81.08}
+\newcommand{\sinkPercentUniqueexecl}{40.43}
+\newcommand{\sinkPercentUniqueexeclp}{80.95}
+\newcommand{\sinkPercentUniquestrcpy}{72.57}
+
+% ---- SaTC Misc Data ----
+\newcommand{\satcKaronteBinaries}{233\xspace}
+\newcommand{\mangoTotalTruPoC}{\mangoCompTotalAlerts}
+\newcommand{\mangoTotalAlerts}{83,644\xspace}
+
+% ---- Alert Ranking Data ----
+\newcommand{\envOpsTP}{10\xspace}
+\newcommand{\envOpsFP}{69\xspace}
+\newcommand{\envOpsTpRate}{12.66\%\xspace}
+\newcommand{\fileOpsTP}{21\xspace}
+\newcommand{\fileOpsFP}{133\xspace}
+\newcommand{\fileOpsTpRate}{13.64\%\xspace}
+\newcommand{\networkOpsTP}{2\xspace}
+\newcommand{\networkOpsFP}{3\xspace}
+\newcommand{\networkOpsTpRate}{40.00\%\xspace}
+\newcommand{\argvTP}{12\xspace}
+\newcommand{\argvFP}{5\xspace}
+\newcommand{\argvTpRate}{70.59\%\xspace}
+\newcommand{\unknownTP}{167\xspace}
+\newcommand{\unknownFP}{71\xspace}
+\newcommand{\unknownTpRate}{70.17\%\xspace}
+
+% ---- Manual Analysis Data ----
+\newcommand{\manualAnalysisCmdInjTotal}{100\xspace}
+\newcommand{\manualAnalysisCmdInjTrueTP}{57\xspace}
+\newcommand{\manualAnalysisCmdInjTrueFP}{43\xspace}
+\newcommand{\manualAnalysisCmdInjTPRatio}{57\%\xspace}
+\newcommand{\manualAnalysisCmdInjFPRatio}{43\%\xspace}
+\newcommand{\manualAnalysisOverflowTotal}{230\xspace}
+\newcommand{\manualAnalysisOverflowTrueTP}{109\xspace}
+\newcommand{\manualAnalysisOverflowTrueFP}{121\xspace}
+\newcommand{\manualAnalysisOverflowTPRatio}{47\%\xspace}
+\newcommand{\manualAnalysisOverflowFPRatio}{53\%\xspace}
+
+% ---- False Negatives Data ----
+\newcommand{\mangoVerifiedAlertsBinaries}{229\xspace}
+\newcommand{\karonteAnalyzedBinaries}{153\xspace}
+\newcommand{\satcAnalyzedBinaries}{131\xspace}
+\newcommand{\satcTotalTime}{\satcCompTotalTime\xspace}
+\newcommand{\mangoNotInKaronte}{229\xspace}
+\newcommand{\mangoNotInSatc}{224\xspace}
+\newcommand{\karonteFalseNegatives}{203\xspace}
+\newcommand{\satcFalseNegatives}{56\xspace}
+
+% ---- SaTC 7 Firmware Data ----
+\newcommand{\satcManTotalBinAmount}{384\xspace}
+\newcommand{\satcManFirstAlerts}{4\xspace}
+\newcommand{\satcManFirstTP}{4\xspace}
+\newcommand{\satcManFirstTime}{30:23h\xspace}
+\newcommand{\satcManFirstBins}{1\xspace}
+\newcommand{\satcManSecondAlerts}{5\xspace}
+\newcommand{\satcManSecondTP}{2\xspace}
+\newcommand{\satcManSecondTime}{11:34h\xspace}
+\newcommand{\satcManSecondBins}{1\xspace}
+\newcommand{\satcManThirdAlerts}{10\xspace}
+\newcommand{\satcManThirdTP}{4\xspace}
+\newcommand{\satcManThirdTime}{22:57h\xspace}
+\newcommand{\satcManThirdBins}{3\xspace}
+\newcommand{\satcManFourthAlerts}{22\xspace}
+\newcommand{\satcManFourthTP}{16\xspace}
+\newcommand{\satcManFourthTime}{8:22h\xspace}
+\newcommand{\satcManFourthBins}{3\xspace}
+\newcommand{\satcManFifthAlerts}{10\xspace}
+\newcommand{\satcManFifthTP}{4\xspace}
+\newcommand{\satcManFifthTime}{9:23h\xspace}
+\newcommand{\satcManFifthBins}{2\xspace}
+\newcommand{\satcManSixthAlerts}{10\xspace}
+\newcommand{\satcManSixthTP}{4\xspace}
+\newcommand{\satcManSixthTime}{8:25h\xspace}
+\newcommand{\satcManSixthBins}{2\xspace}
+\newcommand{\satcManSeventhAlerts}{4\xspace}
+\newcommand{\satcManSeventhTP}{2\xspace}
+\newcommand{\satcManSeventhTime}{0:55h\xspace}
+\newcommand{\satcManSeventhBins}{1\xspace}
+\newcommand{\satcManTotalAlerts}{65\xspace}
+\newcommand{\satcManTotalTP}{36\xspace}
+\newcommand{\satcManTotalBins}{13\xspace}
+\newcommand{\satcManTotalTimeHours}{93\xspace}
+\newcommand{\satcManTotalTimeMin}{20\xspace}
+\newcommand{\satcManTotalTime}{\satcManTotalTimeHours:\satcManTotalTimeMin{}h\xspace}
+
+% ---- Mango 7 Firmware Data ----
+\newcommand{\mangoManFirstAlerts}{16\xspace}
+\newcommand{\mangoManFirstTP}{9\xspace}
+\newcommand{\mangoManFirstTime}{6:30h\xspace}
+\newcommand{\mangoManFirstBins}{4\xspace}
+\newcommand{\mangoManSecondAlerts}{23\xspace}
+\newcommand{\mangoManSecondTP}{14\xspace}
+\newcommand{\mangoManSecondTime}{8:50h\xspace}
+\newcommand{\mangoManSecondBins}{5\xspace}
+\newcommand{\mangoManThirdAlerts}{59\xspace}
+\newcommand{\mangoManThirdTP}{50\xspace}
+\newcommand{\mangoManThirdTime}{18:41h\xspace}
+\newcommand{\mangoManThirdBins}{9\xspace}
+\newcommand{\mangoManFourthAlerts}{8\xspace}
+\newcommand{\mangoManFourthTP}{7\xspace}
+\newcommand{\mangoManFourthTime}{4:10h\xspace}
+\newcommand{\mangoManFourthBins}{4\xspace}
+\newcommand{\mangoManFifthAlerts}{16\xspace}
+\newcommand{\mangoManFifthTP}{3\xspace}
+\newcommand{\mangoManFifthTime}{1:20h\xspace}
+\newcommand{\mangoManFifthBins}{4\xspace}
+\newcommand{\mangoManSixthAlerts}{26\xspace}
+\newcommand{\mangoManSixthTP}{3\xspace}
+\newcommand{\mangoManSixthTime}{8:15h\xspace}
+\newcommand{\mangoManSixthBins}{4\xspace}
+\newcommand{\mangoManSeventhAlerts}{3\xspace}
+\newcommand{\mangoManSeventhTP}{3\xspace}
+\newcommand{\mangoManSeventhTime}{1:35h\xspace}
+\newcommand{\mangoManSeventhBins}{1\xspace}
+\newcommand{\mangoManTotalAlerts}{145\xspace}
+\newcommand{\mangoManTotalTP}{89\xspace}
+\newcommand{\mangoManTotalBins}{31\xspace}
+\newcommand{\mangoManTotalTimeHours}{49\xspace}
+\newcommand{\mangoManTotalTimeMin}{21\xspace}
+\newcommand{\mangoManTotalTime}{\mangoManTotalTimeHours:\mangoManTotalTimeMin{}h\xspace}
+
+% ---- Alert Ranking Analysis ----
+\newcommand{\totalTopNAlertsAnalyzedKaronte}{30\xspace}
+\newcommand{\topNTPKaronte}{22\xspace}
+\newcommand{\topNFPKaronte}{8\xspace}
+\newcommand{\topNTPRateKaronte}{73.33\%\xspace}
+\newcommand{\totalTopNAlertsAnalyzedLargeScale}{30\xspace}
+\newcommand{\topNTPLargeScale}{20\xspace}
+\newcommand{\topNFPLargeScale}{10\xspace}
+\newcommand{\topNTPRateLargeScale}{66.66\%\xspace}
+
+% ---- Context Path Data ----
+\newcommand{\alertedOverflow}{\mangoCompTotalOverflowAlerts}
+\newcommand{\alertedCmdi}{\mangoCompTotalCmdInjAlerts}
+\newcommand{\callsiteOverflow}{\sinkTotalstrcpy\xspace}
+\newcommand{\callsiteCmdi}{3913\xspace}
+\newcommand{\contextOverflow}{7,251,623\xspace}
+\newcommand{\contextCmdi}{347,405\xspace}
+
+% ---- Ablation Summary Data ----
+\newcommand{\ablationSampleBins}{60\xspace}
+\newcommand{\defaultTotal}{275\xspace}
+\newcommand{\defaultTotalMin}{08\xspace}
+\newcommand{\defaultTotalTime}{\defaultTotal:\defaultTotalMin\xspace}
+\newcommand{\defaultAverageMin}{4\xspace}
+\newcommand{\defaultAverageSec}{35\xspace}
+\newcommand{\defaultAverage}{\defaultAverageMin:\defaultAverageSec\xspace}
+\newcommand{\defaultAlerts}{16\xspace}
+\newcommand{\defaultErrors}{13\xspace}
+\newcommand{\defaultTP}{9\xspace}
+\newcommand{\traceTotal}{345\xspace}
+\newcommand{\traceTotalMin}{41\xspace}
+\newcommand{\traceTotalTime}{\traceTotal:\traceTotalMin\xspace}
+\newcommand{\traceAverageMin}{5\xspace}
+\newcommand{\traceAverageSec}{45\xspace}
+\newcommand{\traceAverage}{\traceAverageMin:\traceAverageSec\xspace}
+\newcommand{\traceAlerts}{21\xspace}
+\newcommand{\traceErrors}{37\xspace}
+\newcommand{\traceTP}{9\xspace}
+\newcommand{\assumedTotal}{632\xspace}
+\newcommand{\assumedTotalMin}{18\xspace}
+\newcommand{\assumedTotalTime}{\assumedTotal:\assumedTotalMin\xspace}
+\newcommand{\assumedAverageMin}{10\xspace}
+\newcommand{\assumedAverageSec}{32\xspace}
+\newcommand{\assumedAverage}{\assumedAverageMin:\assumedAverageSec\xspace}
+\newcommand{\assumedAlerts}{13\xspace}
+\newcommand{\assumedErrors}{22\xspace}
+\newcommand{\assumedTP}{5\xspace}
+\newcommand{\allTotalSec}{02\xspace}
+\newcommand{\allTotal}{1,575\xspace}
+\newcommand{\allTotalTime}{\allTotal:\allTotalSec\xspace}
+\newcommand{\allAverageMin}{26\xspace}
+\newcommand{\allAverageSec}{15\xspace}
+\newcommand{\allAverage}{\allAverageMin:\allAverageSec\xspace}
+\newcommand{\allAlerts}{8\xspace}
+\newcommand{\allErrors}{29\xspace}
+\newcommand{\allTP}{1\xspace}
+\newcommand{\assumedPercentage}{129.82\%\xspace}
+\newcommand{\tracePercentage}{25.61\%\xspace}
+\newcommand{\allPercentage}{472.46\xspace}
+\newcommand{\ablationFirmware}{R6400v2\xspace}
+
+% ---- Greenhouse (Large-Scale) Data ----
+\newcommand{\greenhouseNetgearTotal}{182,600\xspace}
+\newcommand{\greenhouseNetgearAlerts}{6,716\xspace}
+\newcommand{\greenhouseNetgearError}{4,240\xspace}
+\newcommand{\greenhouseNetgearOOM}{52\xspace}
+\newcommand{\greenhouseNetgearTime}{84 Days 3h\xspace}
+\newcommand{\greenhouseNetgearAVGTime}{6h 37m\xspace}
+\newcommand{\greenhouseNetgearAVGBinTime}{39.82s\xspace}
+\newcommand{\greenhouseAsusTotal}{104,422\xspace}
+\newcommand{\greenhouseAsusAlerts}{635\xspace}
+\newcommand{\greenhouseAsusError}{1,174\xspace}
+\newcommand{\greenhouseAsusOOM}{45\xspace}
+\newcommand{\greenhouseAsusTime}{46 Days 16h\xspace}
+\newcommand{\greenhouseAsusAVGTime}{7h 05m\xspace}
+\newcommand{\greenhouseAsusAVGBinTime}{38.62s\xspace}
+\newcommand{\greenhouseBelkinTotal}{20,018\xspace}
+\newcommand{\greenhouseBelkinAlerts}{2,102\xspace}
+\newcommand{\greenhouseBelkinError}{353\xspace}
+\newcommand{\greenhouseBelkinOOM}{12\xspace}
+\newcommand{\greenhouseBelkinTime}{14 Days 13h\xspace}
+\newcommand{\greenhouseBelkinAVGTime}{5h 38m\xspace}
+\newcommand{\greenhouseBelkinAVGBinTime}{62.94s\xspace}
+\newcommand{\greenhouseLinksysTotal}{46,470\xspace}
+\newcommand{\greenhouseLinksysAlerts}{211\xspace}
+\newcommand{\greenhouseLinksysError}{440\xspace}
+\newcommand{\greenhouseLinksysOOM}{8\xspace}
+\newcommand{\greenhouseLinksysTime}{20 Days 14h\xspace}
+\newcommand{\greenhouseLinksysAVGTime}{7h 23m\xspace}
+\newcommand{\greenhouseLinksysAVGBinTime}{38.33s\xspace}
+\newcommand{\greenhouseTPLinkTotal}{239,020\xspace}
+\newcommand{\greenhouseTPLinkAlerts}{166\xspace}
+\newcommand{\greenhouseTPLinkError}{3,339\xspace}
+\newcommand{\greenhouseTPLinkOOM}{93\xspace}
+\newcommand{\greenhouseTPLinkTime}{89 Days 5h\xspace}
+\newcommand{\greenhouseTPLinkAVGTime}{4h 25m\xspace}
+\newcommand{\greenhouseTPLinkAVGBinTime}{32.26s\xspace}
+\newcommand{\greenhouseTrendnetTotal}{41,878\xspace}
+\newcommand{\greenhouseTrendnetAlerts}{31\xspace}
+\newcommand{\greenhouseTrendnetError}{5,585\xspace}
+\newcommand{\greenhouseTrendnetOOM}{3\xspace}
+\newcommand{\greenhouseTrendnetTime}{6 Days 18h\xspace}
+\newcommand{\greenhouseTrendnetAVGTime}{0h 51m\xspace}
+\newcommand{\greenhouseTrendnetAVGBinTime}{13.02s\xspace}
+\newcommand{\greenhouseTendaTotal}{29,650\xspace}
+\newcommand{\greenhouseTendaAlerts}{56\xspace}
+\newcommand{\greenhouseTendaError}{576\xspace}
+\newcommand{\greenhouseTendaOOM}{9\xspace}
+\newcommand{\greenhouseTendaTime}{18 Days 6h\xspace}
+\newcommand{\greenhouseTendaAVGTime}{4h 12m\xspace}
+\newcommand{\greenhouseTendaAVGBinTime}{53.24s\xspace}
+\newcommand{\greenhouseDLinkTotal}{95,788\xspace}
+\newcommand{\greenhouseDLinkAlerts}{907\xspace}
+\newcommand{\greenhouseDLinkError}{2,626\xspace}
+\newcommand{\greenhouseDLinkOOM}{25\xspace}
+\newcommand{\greenhouseDLinkTime}{54 Days 1h\xspace}
+\newcommand{\greenhouseDLinkAVGTime}{4h 12m\xspace}
+\newcommand{\greenhouseDLinkAVGBinTime}{50.56s\xspace}
+\newcommand{\greenhouseZyxelTotal}{10,528\xspace}
+\newcommand{\greenhouseZyxelAlerts}{10\xspace}
+\newcommand{\greenhouseZyxelError}{254\xspace}
+\newcommand{\greenhouseZyxelOOM}{2\xspace}
+\newcommand{\greenhouseZyxelTime}{4 Days 0h\xspace}
+\newcommand{\greenhouseZyxelAVGTime}{4h 48m\xspace}
+\newcommand{\greenhouseZyxelAVGBinTime}{32.85s\xspace}
+\newcommand{\greenhouseTotalTotal}{770,374\xspace}
+\newcommand{\greenhouseTotalAlerts}{10,834\xspace}
+\newcommand{\greenhouseTotalError}{18,587\xspace}
+\newcommand{\greenhouseTotalOOM}{249\xspace}
+\newcommand{\greenhouseTotalTime}{339 Days 21h\xspace}
+\newcommand{\greenhouseTotalAVGTime}{5h 32m\xspace}
+\newcommand{\greenhouseTotalAVGBinTime}{38.12s\xspace}

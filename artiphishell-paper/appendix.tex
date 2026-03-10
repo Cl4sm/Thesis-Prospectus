@@ -1,0 +1,169 @@
+%
+%
+%
+
+\textbf{Grammar that that provides seeds that can trigger Tika bug (with a little bit of mutation on the path)}
+\begin{longlisting}
+\begin{minted}[fontsize=\footnotesize, baselinestretch=1.0, frame=single, framesep=3mm]{python}
+# Grammar for generating HTML files to test Tika's HTML parser
+# This grammar focuses on creating HTML files with specific features to test HtmlHandler functionality
+
+ctx.rule("START", b"{HTML_FILE}")
+
+# HTML file with various metadata and features
+ctx.rule("HTML_FILE", b"{HTML_DOCTYPE}{HTML_OPEN}{HTML_HEAD}{HTML_BODY}{HTML_CLOSE}")
+
+# DOCTYPE declaration
+ctx.literal("HTML_DOCTYPE", b"<!DOCTYPE html>\n")
+
+# HTML opening tag
+ctx.literal("HTML_OPEN", b"<html>\n")
+
+# HTML head section with metadata
+ctx.rule("HTML_HEAD", b"<head>\n{META_TAGS}{TITLE}{HEAD_CONTENT}</head>\n")
+
+# Various META tags to test metadata extraction
+ctx.rule("META_TAGS", b"{META_TAG}{META_TAGS}")
+ctx.rule("META_TAGS", b"{META_TAG}")
+
+# Different types of META tags
+ctx.rule("META_TAG", b"<meta name=\"{META_NAME}\" content=\"{META_CONTENT}\">\n")
+ctx.rule("META_TAG", b"<meta http-equiv=\"{HTTP_EQUIV}\" content=\"{META_CONTENT}\">\n")
+ctx.rule("META_TAG", b"<meta property=\"{META_PROPERTY}\" content=\"{META_CONTENT}\">\n")
+ctx.rule("META_TAG", b"<meta charset=\"UTF-8\">\n")
+ctx.rule("META_TAG", b"<meta name=\"ICBM\" content=\"40.71, -74.01\">\n")  # Special ICBM metadata
+ctx.rule("META_TAG", b"<meta name=\"geo.position\" content=\"40.71;-74.01\">\n")  # Geo position metadata
+ctx.rule("META_TAG", b"<meta name=\"DC.title\" content=\"Dublin Core Title\">\n")  # Dublin Core metadata
+ctx.rule("META_TAG", b"<meta name=\"exiftool_path\" content=\"/usr/bin/exiftool\">\n")  # ExifTool path metadata
+
+# META tag names
+ctx.rule("META_NAME", b"author")
+ctx.rule("META_NAME", b"description")
+ctx.rule("META_NAME", b"keywords")
+ctx.rule("META_NAME", b"generator")
+ctx.rule("META_NAME", b"robots")
+ctx.rule("META_NAME", b"viewport")
+ctx.rule("META_NAME", b"application-name")
+ctx.rule("META_NAME", b"created")
+ctx.rule("META_NAME", b"modified")
+ctx.rule("META_NAME", b"content-language")
+
+# HTTP-EQUIV values
+ctx.rule("HTTP_EQUIV", b"content-type")
+ctx.rule("HTTP_EQUIV", b"default-style")
+ctx.rule("HTTP_EQUIV", b"refresh")
+ctx.rule("HTTP_EQUIV", b"content-language")
+ctx.rule("HTTP_EQUIV", b"set-cookie")
+
+# META property values (for Open Graph, etc.)
+ctx.rule("META_PROPERTY", b"og:title")
+ctx.rule("META_PROPERTY", b"og:type")
+ctx.rule("META_PROPERTY", b"og:url")
+ctx.rule("META_PROPERTY", b"og:image")
+ctx.rule("META_PROPERTY", b"og:description")
+ctx.rule("META_PROPERTY", b"og:site_name")
+
+# META content values
+ctx.rule("META_CONTENT", b"Test Content")
+ctx.rule("META_CONTENT", b"Apache Tika Test Document")
+ctx.rule("META_CONTENT", b"HTML, Parser, Testing")
+ctx.rule("META_CONTENT", b"en-US")
+ctx.rule("META_CONTENT", b"width=device-width, initial-scale=1.0")
+ctx.rule("META_CONTENT", b"5; URL=https://example.com")
+ctx.rule("META_CONTENT", b"2023-01-01")
+
+# Title element
+ctx.rule("TITLE", b"<title>Test HTML Document for Apache Tika</title>\n")
+
+# Additional head content
+ctx.rule("HEAD_CONTENT", b"{STYLE_AND_SCRIPT}")
+ctx.rule("HEAD_CONTENT", b"")
+
+# Style and script elements
+ctx.literal("STYLE_AND_SCRIPT", b"<link rel=\"stylesheet\" href=\"styles.css\">\n<script src=\"script.js\"></script>\n")
+ctx.literal("STYLE_AND_SCRIPT", b"<style>body { font-family: Arial; }</style>\n<script>console.log('Test');</script>\n")
+
+# HTML body with various elements
+ctx.rule("HTML_BODY", b"<body>\n{BODY_CONTENT}</body>\n")
+
+# Body content with various elements
+ctx.rule("BODY_CONTENT", b"{HEADING}{PARAGRAPHS}{LISTS}{TABLES}{IFRAMES}{IMAGES}{LINKS}")
+
+# Headings
+ctx.rule("HEADING", b"<h1>Test HTML Document</h1>\n")
+ctx.rule("HEADING", b"<h1>Apache Tika HTML Parser Test</h1>\n")
+
+# Paragraphs
+ctx.rule("PARAGRAPHS", b"{PARAGRAPH}{PARAGRAPHS}")
+ctx.rule("PARAGRAPHS", b"{PARAGRAPH}")
+ctx.rule("PARAGRAPH", b"<p>{TEXT_CONTENT}</p>\n")
+ctx.rule("PARAGRAPH", b"<p><strong>{TEXT_CONTENT}</strong></p>\n")
+ctx.rule("PARAGRAPH", b"<p><em>{TEXT_CONTENT}</em></p>\n")
+
+# Text content
+ctx.rule("TEXT_CONTENT", b"This is a test document for Apache Tika HTML parser.")
+ctx.rule("TEXT_CONTENT", b"The parser should extract all text content and metadata from this document.")
+ctx.rule("TEXT_CONTENT", b"This document contains various HTML elements to test the parser's capabilities.")
+
+# Lists
+ctx.rule("LISTS", b"{LIST}")
+ctx.rule("LISTS", b"{LIST}{LISTS}")
+ctx.rule("LIST", b"<ul>\n{LIST_ITEMS}</ul>\n")
+ctx.rule("LIST", b"<ol>\n{LIST_ITEMS}</ol>\n")
+ctx.rule("LIST_ITEMS", b"{LIST_ITEM}{LIST_ITEMS}")
+ctx.rule("LIST_ITEMS", b"{LIST_ITEM}")
+ctx.rule("LIST_ITEM", b"<li>{TEXT_CONTENT}</li>\n")
+
+# Tables
+ctx.rule("TABLES", b"{TABLE}")
+ctx.rule("TABLES", b"{TABLE}{TABLES}")
+ctx.rule("TABLE", b"<table>\n<thead>\n{TABLE_HEADER}</thead>\n<tbody>\n{TABLE_ROWS}</tbody>\n</table>\n")
+ctx.rule("TABLE_HEADER", b"<tr>\n{TABLE_HEADER_CELLS}</tr>\n")
+ctx.rule("TABLE_HEADER_CELLS", b"{TABLE_HEADER_CELL}{TABLE_HEADER_CELLS}")
+ctx.rule("TABLE_HEADER_CELLS", b"{TABLE_HEADER_CELL}")
+ctx.rule("TABLE_HEADER_CELL", b"<th>{TEXT_CONTENT}</th>\n")
+ctx.rule("TABLE_ROWS", b"{TABLE_ROW}{TABLE_ROWS}")
+ctx.rule("TABLE_ROWS", b"{TABLE_ROW}")
+ctx.rule("TABLE_ROW", b"<tr>\n{TABLE_CELLS}</tr>\n")
+ctx.rule("TABLE_CELLS", b"{TABLE_CELL}{TABLE_CELLS}")
+ctx.rule("TABLE_CELLS", b"{TABLE_CELL}")
+ctx.rule("TABLE_CELL", b"<td>{TEXT_CONTENT}</td>\n")
+
+# IFrames with srcdoc attribute to test handleSrcDoc method
+ctx.rule("IFRAMES", b"{IFRAME}")
+ctx.rule("IFRAMES", b"{IFRAME}{IFRAMES}")
+ctx.rule("IFRAME", b"{IFRAME_WITH_SRCDOC}")
+ctx.rule("IFRAME", b"<iframe src=\"https://example.com\"></iframe>\n")
+
+# IFrame with srcdoc attribute
+ctx.literal("IFRAME_WITH_SRCDOC", b"<iframe srcdoc=\"&lt;html&gt;&lt;body&gt;&lt;p&gt;This is embedded HTML content in an iframe.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;\"></iframe>\n")
+ctx.literal("IFRAME_WITH_SRCDOC", b"<iframe srcdoc=\"&lt;h1&gt;Embedded Content&lt;/h1&gt;&lt;p&gt;Testing iframe srcdoc handling.&lt;/p&gt;\"></iframe>\n")
+
+# Images with various attributes
+ctx.rule("IMAGES", b"{IMAGE}")
+ctx.rule("IMAGES", b"{IMAGE}{IMAGES}")
+ctx.rule("IMAGE", b"<img src=\"image.jpg\" alt=\"Test Image\">\n")
+ctx.rule("IMAGE", b"{BASE64_IMAGE}")
+ctx.rule("IMAGE", b"{DATA_URI_IMAGE}")
+ctx.rule("IMAGE", b"<picture><source media=\"(min-width: 800px)\" srcset=\"large.jpg\"><img src=\"small.jpg\" alt=\"Responsive Image\"></picture>\n")
+
+# Base64 encoded image
+ctx.literal("BASE64_IMAGE", b"<img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=\" alt=\"Base64 Encoded Image\">\n")
+
+# Data URI scheme image to test handleDataURIScheme method
+ctx.literal("DATA_URI_IMAGE", b"<img src=\"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9/KKKKAP/2Q==\" alt=\"JPEG Data URI Image\">\n")
+
+# Links
+ctx.rule("LINKS", b"{LINK}")
+ctx.rule("LINKS", b"{LINK}{LINKS}")
+ctx.rule("LINK", b"<a href=\"https://example.com\">{TEXT_CONTENT}</a>\n")
+ctx.rule("LINK", b"<a href=\"#section\">{TEXT_CONTENT}</a>\n")
+ctx.rule("LINK", b"<a href=\"mailto:test@example.com\">{TEXT_CONTENT}</a>\n")
+ctx.rule("LINK", b"<a href=\"data:text/plain;charset=UTF-8;base64,VGhpcyBpcyBhIHRlc3QgZGF0YSBVUkkgbGluaw==\">{TEXT_CONTENT}</a>\n")  # Data URI link
+
+# HTML closing tag
+ctx.literal("HTML_CLOSE", b"</html>")
+\end{minted}
+% \caption{Example Grammar for Tika bug showing hard coded valid base64 encoded PNG image in BASE_64_IMAGE field}
+\label{fig:tika-bug-grammar}
+\end{longlisting}

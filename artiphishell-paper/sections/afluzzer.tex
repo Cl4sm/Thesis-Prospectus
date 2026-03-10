@@ -1,0 +1,8 @@
+\subsection{AFluzzer}
+\label{afluzzer}
+
+As a baseline, we use \afl~\cite{aflplusplus} and \libfuzzer~\cite{libfuzzer} to fuzz C and C++ codebases, and \jazzmine{}, our Java fuzzer based on \jazzer~\cite{jazzer}.
+Each instance of \afl\ and \jazzmine\ selects a random configuration from a predefined configuration space inherent to each tool.
+Examples of such configurations include fuzzing timeouts, CmpLog\cite{aschermann2019redqueen}, string dictionary usage, whether to use grammar-fuzzing, etc.
+This diverse set of fuzzing configurations improves both the bug-finding ability of our system and the resilience of the system to unknown targets.
+All instances also share seeds amongst each other.

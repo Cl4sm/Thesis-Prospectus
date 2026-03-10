@@ -1,0 +1,70 @@
+\section{Related Work}
+
+\subsection{AFL++}
+
+AFL++ is a significant evolution of the original American Fuzzy Lop (AFL)~\cite{afl}, aimed at addressing the limitations of AFL while integrating a broad array of modern fuzzing advancements. 
+Built as a reengineered fork, AFL++ preserves AFL’s core strengths (coverage-guided greybox fuzzing using instrumentation and efficient test case triaging) but introduces a modular and extensible architecture that facilitates integration with state-of-the-art fuzzing research. 
+It is developed and maintained by a community of researchers and practitioners, with the explicit goal of making fuzzing more accessible, reproducible, and effective across diverse software targets.
+
+One of AFL++‘s foundational enhancements over AFL is its Custom Mutator API, which enables users to implement custom fuzzing logic, including novel mutation strategies, feedback mechanisms, or scheduling algorithms, without forking or modifying AFL++ itself. 
+This modularity encourages rapid experimentation and integration of new research ideas. 
+AFL++ also absorbs and generalizes many features from academic and industry forks of AFL, such as AFLFast’s power schedules for emphasizing low-frequency paths~\cite{bohme2016aflfast}, MOpt’s mutation operator optimization via swarm intelligence~\cite{lyu2019mopt}, and RedQueen’s input-to-state feedback model—into a unified framework~\cite{aschermann2019redqueen}. 
+Each of these techniques is accessible via plugin-style configuration, allowing users to compose fuzzing setups that are tailored to specific targets or research questions.
+
+Beyond mutational logic, AFL++ expands AFL’s instrumentation and execution models. 
+It supports multiple backends, including LLVM, GCC, QEMU, Unicorn, and QBDI, making it suitable for both source-based and binary-only fuzzing. 
+AFL++ also introduces advanced features like context-sensitive coverage, N-gram tracing, and LAF-Intel-style comparison splitting to navigate deep or guarded code paths. 
+Its QEMU mode supports persistent fuzzing and comparison logging, while innovations like the Snapshot LKM provide fast, forkless state restoration, boosting scalability in parallel setups. 
+Platform-wise, AFL++ is highly portable, supporting a wide range of operating systems and environments. 
+These enhancements collectively position AFL++ not just as a successor to AFL, but as a comprehensive platform for both high-throughput bug discovery and cutting-edge fuzzing research.
+
+\subsection{Nautilus}
+
+Nautilus~\cite{nautilus} is a grammar-based fuzzing system that enhances the traditional input generation methods by incorporating coverage-guided feedback. 
+At its core, NAUTILUS operates by parsing a user-supplied context-free grammar to produce derivation trees, which represent the syntactic structure of inputs. 
+These trees are then used to generate test inputs in a structured and semantically meaningful way. 
+
+To begin the fuzzing process, NAUTILUS compiles the target program with instrumentation to capture code coverage data. 
+It initially generates a small set of inputs directly from the grammar, tests them against the instrumented binary, and evaluates whether any new code paths are triggered. 
+If so, these inputs are minimized structurally (first by simplifying individual subtrees and then by reducing recursive constructs) before being stored in a mutation queue for further exploration.
+
+The fuzzing loop in NAUTILUS revolves around this mutation queue. 
+Inputs that demonstrate interesting behavior are selected for transformation using a suite of grammar-aware mutation strategies. 
+These include replacing subtrees with alternate derivations, recursively expanding expressions to increase complexity, and splicing subtrees from one input into another to combine distinct features. 
+Additionally, AFL-style byte-level mutations are applied selectively to introduce small-scale syntactic deviations that may expose parser vulnerabilities. 
+Crucially, NAUTILUS uses feedback from coverage analysis to determine whether these transformations yield new execution paths. 
+This feedback loop ensures that the fuzzer focuses its efforts on inputs that penetrate deeper into the application’s logic, beyond initial syntactic validation.
+
+A unique strength of NAUTILUS is its ability to generate not just syntactically valid inputs, but also inputs that are semantically rich and contextually appropriate, thanks to the use of scripted grammar extensions. 
+These scripts allow for the generation of non-context-free structures, such as matched XML tags or offset-aligned binary fields. 
+This capability makes NAUTILUS particularly effective for fuzzing interpreters and compilers, where deep program logic often lies behind multiple layers of input validation. 
+Its design allows it to operate without an initial corpus, relying solely on the grammar and source code instrumentation. 
+This makes it especially suitable for testing new or poorly documented input formats. 
+Overall, NAUTILUS bridges the gap between generational and feedback-driven fuzzing, yielding higher code coverage and uncovering bugs in areas previously inaccessible to conventional fuzzers.
+
+\subsection{Jazzer}
+
+Jazzer is a coverage-guided fuzzing tool designed specifically for applications running on the Java Virtual Machine (JVM). 
+Developed by Code Intelligence in collaboration with the OSS-Fuzz initiative, Jazzer adapts the feedback-driven fuzzing model popularized by tools such as AFL and libFuzzer to the Java ecosystem. 
+
+Its primary goal is to enable efficient vulnerability discovery in Java applications by providing a mechanism for high-throughput fuzzing that integrates tightly with existing native fuzzing infrastructure. 
+Unlike traditional JVM testing tools, Jazzer is capable of uncovering memory safety issues, logic errors, and unexpected exceptions by executing target code under the control of a mutation-based feedback loop.
+
+At its core, Jazzer wraps libFuzzer and executes the fuzzing loop through native calls to the Java Virtual Machine. 
+Developers define fuzzing targets by writing special Java classes that expose a single static method, typically called fuzzerTestOneInput, which accepts a FuzzedDataProvider. 
+This provider converts raw byte input into common Java types such as strings, integers, booleans, or byte arrays, giving developers control over how input is structured and interpreted. 
+The method is invoked repeatedly with mutated inputs generated by libFuzzer, and Jazzer monitors code coverage to guide further input generation. 
+Instrumentation is applied at the bytecode level, allowing Jazzer to collect line, branch, and edge coverage directly from the JVM. 
+Jazzer can use a variety of instrumentation backends, including JVMCI and Jacoco, to extract feedback about the execution path taken by each input.
+
+Jazzer supports fuzzing a wide range of JVM-based applications, including those written in Java, Kotlin, or Scala. 
+It can also fuzz hybrid applications that include both Java and native code through the Java Native Interface (JNI). 
+One of the unique features of Jazzer is its ability to fuzz across this language boundary, making it suitable for modern applications that include native libraries or performance-critical code written in C or C++. 
+In addition, Jazzer can detect issues such as unhandled exceptions, assertion failures, memory errors in JNI libraries (via AddressSanitizer or other sanitizers), and logic bugs triggered by malformed or unexpected input. 
+Crash reports are automatically generated and include stack traces and minimal reproducing inputs.
+
+Despite its capabilities, Jazzer has some limitations. 
+The performance of fuzzing is inherently bounded by the startup time and execution overhead of the JVM, which is typically greater than that of native binaries. Moreover, the quality of fuzzing results depends heavily on how well developers write fuzz targets and interpret input from the FuzzedDataProvider. 
+Unlike grammar-based fuzzers or symbolic execution tools, Jazzer relies entirely on mutation and code coverage as feedback. 
+This can limit its ability to reach deeply nested code paths or trigger complex state transitions, especially in protocols or APIs that require specific sequences of inputs.
+

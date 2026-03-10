@@ -1,0 +1,125 @@
+\section{Introduction}
+\label{sec:intro}
+
+The Internet of Things has spawned a device ecosystem that allows users to control and automate everything in their homes---from their locks to their lights.
+% This increase in convenience comes with an increase in entry points to these user's networks, thus amplifying potential security risks.
+This increase in convenience comes with increased security risks, as IoT devices frequently run (often out-of-date) firmware with vulnerable services~\cite{kudelski,cybertalk}.
+
+Modern IoT firmware frequently takes the form of an entire embedded Linux distribution that uses user-space binaries to expose services that can be accessed over the network.
+These services vary from web interfaces for device configuration, complex IoT-specific protocols (e.g., Matter~\cite{matter} and Zigbee~\cite{zigbee}), or custom file-sharing servers with varying levels of complexity.
+Many services invoke backend binaries to gather system and environment information, commit configuration changes, or render webpages.
+% There are also many services that are exposed directly over specific ports with no front-end interface such as miniupnp.
+
+While complex and feature-rich services make modern IoT devices powerful, this complexity breeds vulnerabilities~\cite{gbhackers,scmagazine}.
+Therefore, automated techniques for scalable and precise detection of these vulnerabilities in the firmware of IoT are in pressing need.
+
+Researchers have proposed analysis techniques to automatically identify vulnerabilities in IoT firmware, which generally fall into two categories:
+(1) static analysis techniques that attempt to statically identify vulnerabilities in the binaries in a firmware image using binary analysis techniques~\cite{karonte,SaTC},
+and (2) dynamic analysis techniques that attempt to identify vulnerabilities through execution of said binaries~\cite{chen2016towards,kim2020firmae,zheng2019firm,zheng2022efficient}.
+Broadly speaking, static approaches tend to discover more vulnerabilities (by covering much of the binary's behavior during analysis) while also reporting false positives (because static analyses cause over-approximation of the binary's behavior). 
+At the same time, dynamic approaches lead to much fewer false positives (as dynamic techniques typically have a concrete input that triggers the vulnerability) while also missing vulnerabilities (due to incomplete code coverage).
+
+Dynamic techniques are particularly challenging to apply to the domain of binary firmware services.
+Executing a target service is difficult due to dependencies on the underlying IoT operating system (OS) and hardware.
+Much of the research direction in this area is geared toward running a target service or emulating the hardware.
+But even the best firmware rehosting technique only successfully rehosts around 32\% of 1,764 real-world firmware targets~\cite{greenhouse}, hampering the application of dynamic techniques and making static techniques more promising.
+
+The tantalizing promise of static analysis techniques is that they can be applied to \emph{any} binary firmware service, as there is no need to run or emulate the underlying OS or hardware.
+These techniques, while capable of finding real vulnerabilities, take significant resources:
+On \karonte's dataset of 49 firmware images \satc~\cite{SaTC} spends \SaTConKaronteHours hours processing, while \karonte~\cite{karonte} takes \KaronteonKaronteHours hours.
+Even more troubling, to achieve even this level of scalability, \karonte and \satc paid a significant price in either low coverage or high false negatives, respectively.
+
+
+%% However, these techniques suffer from limitations: both state-of-the-art systems \karonte~\cite{karonte} and \satc~\cite{SaTC} have two core issues.
+%% First, static techniques are notorious for producing false positive \trupoc{}s.
+%% Second, even though \karonte and \satc are more scalable than typical dynamic techniques, they still suffer significant scalability limitations: \satc spends 35 hours processing \karonte's dataset of 49 firmware, while \karonte takes \emph{7 days} to perform that analysis.
+%% However, these numbers do not convey the full performance story.
+
+To improve scalability, \karonte introduced the concept of \emph{Binary Dependence Graph} (BDG): a graph of nodes representing user-space binaries in a firmware image, with edges between those binaries denoting data flows.
+The BDG is anchored by binaries that are deemed to be network services, and only binaries that exchange data with them are analyzed.
+On \karonte's dataset, this reduces the number of binaries analyzed per firmware sample by \karonte to an average of 5 binaries and \satc, which uses a similar strategy, to an average of 3, thus reducing the analysis requirement significantly from an average of 174 total binaries per firmware.
+% The BDG is also used to filter false positives by propagating data provenance to eliminate spurious alerts.
+
+This technique, though novel, comes with a cost: the strict filtering induced by BDG, which is necessary to ensure scalability, filters out \emph{actual vulnerabilities}.
+For example, the cross-binary vulnerability described in Section~\ref{sec:motivating_example} is undetectable by the BDG technique, as implemented by \karonte and \satc, as it requires limiting the analysis scope to a few binaries determined by their likelihood of interacting with user-input.
+
+\smallskip
+
+In this paper, we propose \mango, a static analysis technique for finding taint-style vulnerabilities in Linux-based user-space firmware services that scales so well that it removes the need for aggressive BDG-based filtering while maintaining reasonable precision.
+\mango's novel, context-sensitive static data-flow analysis, \rda, which leverages intuitive execution patterns and trace shortening, requires no access to source code.
+\rda uses both value analysis and data dependency analysis to enable precise reasoning about the \emph{composability} and \emph{exploitability} of values that flow into vulnerable sinks.
+For example, \rda can correctly deduce that
+
+\begin{quote}
+    \small
+    \texttt{sprintf(buf, "ls \%s", itoa(input));} \\
+    \texttt{system(buf);}
+\end{quote}
+
+\noindent
+is not a vulnerability while
+
+\begin{quote}
+    \small
+    \texttt{snprintf(buf, 50, "echo hello \%s", input);} \\
+    \texttt{system(buf);}
+\end{quote}
+
+\noindent
+may be vulnerable to command injection.
+
+To improve scalability, we draw inspiration from how human reverse engineers find taint-style vulnerabilities in software:
+%\todo[inline]{Should we change this claim?}
+Starting from vulnerability sinks and iteratively tracing backward through potential parent functions to determine if any data flows are likely vulnerable.
+Moreover, instead of analyzing each callee in every function along the call tree, human reverse engineers decide on a per-call basis if the call to a callee function would impact the data flow.
+These two steps are critical for reducing false positive rates and increasing analysis speed.
+
+Using this inspiration, we implement two novel optimizations in \rda, namely \emph{\rev} and \emph{\assumed}, which mimic humans' actions during manual vulnerability discovery, and these optimizations are key for achieving scalability.
+% taint tracking that resolves input paths to sinks unhindered by pre-specified sources and eliminating entraneous and fully resolvable paths along the way.
+% \toolname avoids running any sort of analysis on functions that do not directly utilize a value that flows into the intended sink.
+
+\rda allows \mango to significantly increase the analysis scope \emph{while simultaneously improving overall performance.}
+\mango analyzed \emph{all \mangoKaronteBinaries binaries} across the 49 firmware samples in the \karonte dataset in \mangoCompTotalTimeHours hours, while \satc analyzed \satcTotalAnalyzedBins total binaries in \satcCompTotalTimeHours hours of CPU time and \karonte analyzed \karonteAnalyzedBinaries binaries in 463 hours.
+While these performance numbers were done on different hardware at different times, \mango analyzed 27$\times$ more binaries in a comparable amount of time that it took \satc to analyze \satcTotalAnalyzedBins binaries.
+\mango's average per-binary analysis time is \mangoavgtime minutes compared to \SaTCTimePerBin hours for \satc and \karonteTimePerBin hours for \karonte.
+
+The current implementation of \mango supports two classes of vulnerabilities:
+CWE-78 (OS Command Injections) and CWE-121 (stack-based buffer overflows).
+Both comparative solutions, \karonte and \satc, work explicitly on Linux-based user-space binary firmware services and not on monolithic or RTOS-based firmware.
+Through a comparative study on the firmware dataset on which \satc and \karonte evaluated (with \karontesize unique firmware samples), we demonstrate that \mango generates \satcFalseNegatives true positives that are never alerted by \satc and similarly \karonteFalseNegatives true positives that are missed by \karonte.
+
+We also conduct an ablation study to demonstrate the effect of \rev and \assumed on efficiency and effectiveness.
+The improved efficiency of \mango allows us to conduct a large-scale vulnerability discovery on a new dataset with \ldsize firmware samples from \ldvendors vendors.
+\mango reports every potential bug it finds, \mangoTotalAlerts alerts in total.
+However, this number of alerts cannot be reasonably triaged.
+To aid in separating bugs from vulnerabilities, we introduce the concept of ranked alerts, which we call \trupoc{}s.
+Manual analysis on a sample set of these alerts suggests a true positive rate of \mangocmdiTP for command injections and \mangooverflowTP for buffer overflows. 
+For every 10 command injection alerts a human analyst triages, 5 will be actual vulnerabilities.
+
+\smallskip
+\noindent
+\textbf{\textit{Contributions.}}
+Our paper makes the following contributions:
+
+\begin{itemize}[noitemsep]
+    \item
+          We build a novel data-flow analysis, \rda, on the domain of integers and fixed-length strings, enabling scalable discovery of taint-style vulnerabilities.
+          % We also propose \textit{assumed execution}, a methodology for deciding which callers deserve to be explored during taint-analysis.
+          This new domain allows precise reasoning of string values that flow into vulnerable sinks, and is more precise than traditional taint analysis.
+
+    \item
+          We further propose two optimizations, \rev and \assumed, which are critical for the efficiency and false negative reduction of \rda.
+
+    \item
+          We implement \rda in a prototype system, \mango, and evaluate it against the state-of-the-art solutions for finding taint-style vulnerabilities in firmware binaries.
+
+          % We introduce two mechanisms for reducing false positives while retaining performance. 
+          % Firstly, Simprocedure handlers are introduced to faithfully manipulate values as library functions would such as \textit{sprintf} without the overhead of symbolic execution.
+          % Secondly, Concrete Execution of select functions is used to determine sanitization functions.
+
+\end{itemize}
+
+\smallskip
+\noindent
+In the spirit of open science, the source code and artifacts of \mango, along with a Docker image for replicating our experiments, can be found at \url{https://github.com/sefcom/operation-mango-public}.
+The contributions in this paper will also be integrated into angr~\cite{wang2017angr}.

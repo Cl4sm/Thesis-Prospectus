@@ -1,0 +1,27 @@
+\begin{table}[tb]
+    \centering
+    \small
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{lr:rrrr:rrr}
+        \hline
+        \textbf{Vendor} & \textbf{Samples} & \multicolumn{4}{c:}{\textbf{Binaires}} & \textbf{Time}             & \textbf{AVG Time}        & \textbf{AVG Bin Time}                                                                                         \\
+                        &                  & \textbf{Total}                         & \textbf{\trupoc{}s}           & \textbf{Error}           & \textbf{OOM}                                                                                                  \\
+        \hline
+        Netgear         & 305              & \greenhouseNetgearTotal                & \greenhouseNetgearAlerts  & \greenhouseNetgearError  & \greenhouseNetgearOOM  & \greenhouseNetgearTime  & \greenhouseNetgearAVGTime  & \greenhouseNetgearAVGBinTime  \\
+        Asus            & 158              & \greenhouseAsusTotal                   & \greenhouseAsusAlerts     & \greenhouseAsusError     & \greenhouseAsusOOM     & \greenhouseAsusTime     & \greenhouseAsusAVGTime     & \greenhouseAsusAVGBinTime     \\
+        Belkin          & 62               & \greenhouseBelkinTotal                 & \greenhouseBelkinAlerts   & \greenhouseBelkinError   & \greenhouseBelkinOOM   & \greenhouseBelkinTime   & \greenhouseBelkinAVGTime   & \greenhouseBelkinAVGBinTime   \\
+        Linksys         & 67               & \greenhouseLinksysTotal                & \greenhouseLinksysAlerts  & \greenhouseLinksysError  & \greenhouseLinksysOOM  & \greenhouseLinksysTime  & \greenhouseLinksysAVGTime  & \greenhouseLinksysAVGBinTime  \\
+        TPlink          & 484              & \greenhouseTPLinkTotal                 & \greenhouseTPLinkAlerts   & \greenhouseTPLinkError   & \greenhouseTPLinkOOM   & \greenhouseTPLinkTime   & \greenhouseTPLinkAVGTime   & \greenhouseTPLinkAVGBinTime   \\
+        Trendnet        & 178              & \greenhouseTrendnetTotal               & \greenhouseTrendnetAlerts & \greenhouseTrendnetError & \greenhouseTrendnetOOM & \greenhouseTrendnetTime & \greenhouseTrendnetAVGTime & \greenhouseTrendnetAVGBinTime \\
+        Tenda           & 104              & \greenhouseTendaTotal                  & \greenhouseTendaAlerts    & \greenhouseTendaError    & \greenhouseTendaOOM    & \greenhouseTendaTime    & \greenhouseTendaAVGTime    & \greenhouseTendaAVGBinTime    \\
+        D-Link          & 320              & \greenhouseDLinkTotal                  & \greenhouseDLinkAlerts    & \greenhouseDLinkError    & \greenhouseDLinkOOM    & \greenhouseDLinkTime    & \greenhouseDLinkAVGTime    & \greenhouseDLinkAVGBinTime    \\
+        ZyXEL           & 20               & \greenhouseZyxelTotal                  & \greenhouseZyxelAlerts    & \greenhouseZyxelError    & \greenhouseZyxelOOM    & \greenhouseZyxelTime    & \greenhouseZyxelAVGTime    & \greenhouseZyxelAVGBinTime    \\
+        \hline
+        Total           & 1,698            & \greenhouseTotalTotal                  & \greenhouseTotalAlerts    & \greenhouseTotalError    & \greenhouseTotalOOM    & \greenhouseTotalTime    & \greenhouseTotalAVGTime    & \greenhouseTotalAVGBinTime    \\
+        \hline
+    \end{tabular}
+    }
+    \caption{Large-scale evaluation run on \ldsize firmware samples.
+        This table lists the vendors belonging to the firmware run on the largescale dataset for \mango's analysis and all numbers shown are relative to said vendor.}
+    \label{tab:mango_largescale}
+\end{table}

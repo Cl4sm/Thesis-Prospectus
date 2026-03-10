@@ -1,0 +1,60 @@
+% \begin{algorithm}
+    % \caption{Assumed Execution}
+    % \label{alg:assumed-exec}
+    % \small
+    % \begin{algorithmic}[1]
+        % \Function{AnalyzeFunction}{state, white\_list, sink}
+        % \For{function in white\_list}
+        % \State $intra\_functions$ = state.TaintAnalysis(function)
+        % \If{DependsOn(sink, function.return\_val)}
+        % \If{function.call\_depth == maximum\_depth}
+        % \State continue
+        % \EndIf
+        % \State $intra\_white\_list\gets \{\}$
+        % \For{intra\_func in $intra\_functions$}
+        % \If{DependsOn(intra\_func, function.return\_val)}
+        % \State{$intra\_white\_list.append(intra\_func)$}
+        % \EndIf
+        % \EndFor
+        % \State AnalyzeFunction(function,
+        % \State intra\_white\_list,
+        % \State function.return\_val )
+        % \EndIf
+        % \EndFor
+        % \EndFunction
+    % \end{algorithmic}
+% \end{algorithm}
+
+% \todo[inline]{Fix this, it looks awful}
+
+\begin{algorithm}[t]
+    \caption{Assumed Nonimpact}
+    \label{alg:assumed-exec}
+    \small
+    \SetAlgoLined
+    \SetInd{0.5em}{0.5em} % Set indent to 0.5em for both levels
+    \SetNlSty{textbf}{}{:} % Bold line numbers
+    \DontPrintSemicolon % Don't print semicolons at the end of lines
+
+    \SetKwFunction{FAnalyzeFunction}{AnalyzeFunction}
+    \SetKwProg{Fn}{function}{}{end}
+    \Fn{\FAnalyzeFunction{state, white\_list, sink}}{
+        \For{func in white\_list}{
+            intra\_funcs = \text{state.TaintAnalysis(func)}\;
+
+            \If{DependsOn(sink, func.ret\_val)}{
+                \If{func.call\_depth == maximum\_depth}{
+                    continue\;
+                }
+                intra\_white\_list = \{\}\;
+
+                \For{intra\_func in intra\_funcs}{
+                    \If{\text{DependsOn(intra\_func, func.ret\_val)}}{
+                        intra\_list.\text{append(intra\_func)}\;
+                    }
+                }
+                AnalyzeFunction(func, intra\_list, func.ret\_val)\;
+            }
+        }
+    }
+\end{algorithm}

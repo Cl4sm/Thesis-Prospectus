@@ -1,0 +1,180 @@
+CHAPTER
+
+6.6
+
+Page
+
+Merchants (in yellow) and their registered domains (in blue). Highlighted
+links between merchants indicate they are connected to each other (more
+details in subsection 6.4.1). . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 79
+
+6.7
+
+Example of a website evading detection by the payment processor using
+redirection to a user-invisible domain. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 83
+
+6.8
+
+Time delta between a fraudulent shopping websites domain’s creation date
+and the merchant’s first transaction date on financial Org A. . . . . . . . . . . . . . . . . 84
+
+6.9
+
+Number of domains linked to every merchant ID in our dataset. . . . . . . . . . . . . 84
+
+6.10 Example of an advertisement that links to a fraudulent shopping website. . . . 86
+6.11 Total number of transactions for each domain as reported by financial Org
+A. Note that the axis are deliberately unspecified—financial Org A considers transaction volume to be sensitive, therefore this figure only shows the
+distribution. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 87
+6.12 Random samples from three different clusters of fraudulent shopping websites. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 93
+6.13 An example of a commonly used “About Us” section in fraudulent shopping websites. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 93
+7.1
+
+The proposed pipeline for creating an LLM-based fraudulent shopping websites detection. We use Llama-3-8B-Instruct as the base model to perform
+a two-step supervised fine-tuning. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 100
+
+7.2
+
+t-SNE plot of BP test dataset and our real-world collected dataset. This plot
+shows a gap between the two evaluation datasets, indicating a data shift that
+is happening in recent fraudulent shopping websites. . . . . . . . . . . . . . . . . . . . . . . . 107
+
+xii
+
+CHAPTER
+
+7.3
+
+Page
+
+F-1 score of S CAM N ET after step 1 and step 2 of supervised fine-tuning on
+the real-world evaluation set. The results indicate a performance improvement after performing the second round of tuning on our curated dataset. . . . 110
+
+xiii
+
+Chapter 1
+
+INTRODUCTION
+
+The Internet has revolutionized numerous aspects of society, including telecommunications, education, entertainment, and commerce, connecting around 5.3 billion people,
+or 61.4% of the global population, as of December 2023[9]. Its influence and adoption
+continue to grow, making it a crucial part of daily life.
+Originating from ARPANET, a late 1960s project by DARPA, the Internet evolved from
+connecting just four university computers[70]. However, security concerns quickly became
+apparent with the rise of malicious users.
+The creation of the World Wide Web in 1989 by Tim Berners-Lee[23] marked a shift,
+making the Internet a resource beyond the scientific community. From one million public
+hosts in 1993, the numbers skyrocketed to 171 million in 2003 and surpassed one billion by
+late 2013[1]. Unfortunately, the expansion also amplified attacker motivations, especially
+with the potential for significant financial gain from exploiting security vulnerabilities. Today, the transmission and storage of sensitive and financial information across the Internet
+have become commonplace, highlighting the critical need for robust security to protect data
+from falling into the wrong hands.
+1.1
+
+Navigating the Cyber Threat Landscape
+
+Cybercrime, encompassing a wide range of illegal activities involving digital devices,
+computer networks, and the internet, can be perpetrated by individuals, organized groups,
+or state-sponsored actors. Criminals may utilize computers as instruments for or targets
+of their activities. The dynamic and rapidly evolving nature of cybercrime, fueled by the
+proliferation of connected devices and easy internet access, presents significant prevention
+1
+
+challenges. While technology offers immense societal benefits, it also expands the attack
+surface for criminals, lowering the barrier to entry for cybercrime. The availability of
+sophisticated attack tools and anonymization techniques further complicates efforts to track
+and stop cybercriminals.
+It is common for cybercrime to spread across jurisdictions, which makes it more difficult for law enforcement entities to prosecute. In spite of several high-profile convictions
+for computer-related crimes, many types of cybercrime remain unpunished by legal consequences and laws and policies. Cybercrime, which is characterized by a very high number
+of small perpetrators, poses particular legal difficulties because of this legal ambiguity. The
+annual cost of cybercrime, difficult to measure because of its global and varied nature, is
+likely underestimated and underreported[4].
+Vigilance is essential in the battle against attackers, as they often target individual users
+directly. Recent data from the Federal Trade Commission(FTC) reveals that in 2022, consumers reported fraud losses close to $8.8 billion, marking an increase of over 30 percent
+from the prior year.[8]. Overall, in 2022, FTC collected over 5.1 million reports, encompassing not only the aforementioned fraud cases but also identity theft incidents and complaints about various consumer issues like credit bureau and bank or lender problems. Of
+these, there were more than 1.1 million reports of identity theft. Attackers use different
+social engineering techniques to flood the internet with deceptive websites daily, luring
+victims into payments or disclosing sensitive info. Sometimes, attacks even come via traditional methods like phone calls or texts[106]. The variety of attack methods indicates
+these are just initial signs of a larger problem, making it a challenging task to effectively
+counter these threats.
+In this digitally-driven era, the onus is on individuals, organizations, and governments
+to actively engage in cybersecurity efforts, implementing effective defenses and staying
+vigilant against the constant threat of cyber attackers. Continuous research efforts are cru2
+
+cial to stay ahead of attackers and maintain a comprehensive understanding of cyber threats
+over time.
+1.1.1
+
+Phishing
+
+Phishing, a prevalent cybercrime method, deceives victims into exposing sensitive data
+through misleading emails or fake websites, with attackers aiming for financial gain[41].
+While it might seem simple and easy to mitigate, phishing attacks are persistent, evolving
+in sophistication and volume.
+Despite advances in anti-phishing measures integrated into browsers and implemented
+through multi-layered security strategies[111, 72], these attacks remain a threat. The AntiPhishing Working Group (APWG)[6], established in 2003, continues to combat this issue,
+with detected phishing incidents drastically rising over the years.
+Phishing has been extensively studied and analyzed across the cybersecurity community. Numerous research papers, articles, and reports have delved into its various facets,
+from attack methodologies to prevention and mitigation strategies[37, 38, 43, 47]. The
+breadth of this research has led to a comprehensive understanding of how phishing attacks
+are orchestrated, the psychological tactics employed by attackers, and the types of information they typically target.
+Over the years, scholars and cybersecurity professionals have developed a robust body
+of knowledge on phishing, categorizing different types of phishing attacks, such as spear
+phishing[29], vishing[49], and smishing[117], and analyzing their unique characteristics.
+This comprehensive collection of research underscores the cybersecurity community’s dedication to fully understanding and addressing phishing threats, demonstrating a profound
+and well-rounded grasp of the subject. Such collective insights lay a solid groundwork
+for ongoing and future initiatives to combat phishing attacks and safeguard users’ sensitive
+data.
+3
+
+1.1.2
+
+Fraudulent E-commerce Websites
+
+Attackers also set their sights on everyday internet users, with the Federal Trade Commission in the United States receiving 2.8 million fraud reports in 2021, resulting in a
+staggering $5.8 billion in financial losses. The top three reported fraud categories were impostor scams, online shopping scams, and reward/prize scams, accounting for $2.3 billion
+in losses, nearly double that of 2020.
+Although researchers have explored countermeasures to mitigate the impact of this type
+of social engineering attack, most efforts have been directed at specific attack vectors, such
+as fake online stores[25], pet scams[86], and charity scams[35].
+These scams fall under a broader category we term fraudulent e-commerce websites
+(FCWs). Unlike phishing attacks aiming to steal user information, FCWs trick users into
+paying for nonexistent or misrepresented items or services. FCWs may not always impersonate well-known brands; instead, they often replicate the look and feel of legitimate
+e-commerce sites to deceive users. Given the vast array of FCWs that users might encounter, there is a pressing need for broader, more effective defenses capable of detecting
+generic FCWs.
+A holistic approach to detecting FCWs at an ecosystem level is still lacking. The challenges impeding large-scale, ecosystem-level detection are manifold. Safeguarding users
+from phishing attacks is challenging, with many issues still unresolved. While technical
+countermeasures play a crucial role in providing automated, large-scale protection, they
+are not a complete solution. Firstly, there is a noticeable absence of a current, publicly accessible dataset tailored for FCW detection, hindering the application of machine-learning
+techniques. Past research often relied on spam datasets like spamscatter [17] or non-public
+datasets [50, 58]. However, these sources are inadequate for FCW detection as less than
+30% of URLs in spam emails correspond to FCWs [17]. Without proper filtering methods,
+
+4
+
+classifiers trained on this data are prone to inaccuracies due to noise. To accurately represent the current landscape, it is crucial to compile a contemporary and precise dataset of
+Fraudulent e-Commerce Websites (FCWs). However, this is a daunting task as these websites often vanish quickly. Furthermore, FCWs do not rely on a single distribution method,
+such as emails, making them harder to collect.
+The content of FCWs is vital for detection so simple web crawling techniques might
+not yield a suitable dataset for studying FCWs. Additionally, the data must exclusively
+contain verified FCWs, and manually checking each one is a tedious and expert-intensive
+task. FCWs also tend to change over time. In the past, fake online shops would lure
+customers with extremely low prices. Nowadays, they are more likely to offer reasonable
+prices, adapting to users who have grown skeptical of deals that seem too good to be true.
+1.2
+
+Objectives of the Research
+
+I explored the reasons behind less attention to all categories of FCWs. However, to
+enhance current defenses and close the vulnerabilities exploited by criminals, we need to
+grasp how FCWs persist on such a large scale. The challenge lies in obtaining representative measurements at the ecosystem level, compounded by the swiftly changing threat
+landscape, which has led previous research to frequently overlook the essential measurements required for comprehensive understanding.
+Mapping the Landscape: Our first objective is to comprehensively map the landscape
+of FCWs, identifying various types, patterns, and tactics employed by cybercriminals. This
+involves a meticulous analysis of website characteristics, user interactions, and transactional behaviors. Automated Detection and Analysis: We aim to develop an efficient and
+automated approach to gather, analyze, and categorize FCWs. Leveraging crowdsourcing
+and machine learning, we seek to enhance the accuracy and speed of detection, paving the
+way for real-time mitigation. Understanding Pandemic-Driven Cyber Threats: With
+5
+
+

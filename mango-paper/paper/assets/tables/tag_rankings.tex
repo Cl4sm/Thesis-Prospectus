@@ -1,0 +1,19 @@
+\begin{table}[tb]
+    \centering
+    \begin{adjustbox}{width=\columnwidth}
+      
+      \begin{tabular}{|c:c:c:c:c:c:c|}
+        \hline
+         & \textbf{env\_ops} & \textbf{file\_ops} & \textbf{network\_ops} & \textbf{argv} & \textbf{unknown}  \\
+        \hline
+        TP      & \envOpsTP & \fileOpsTP & \networkOpsTP & \argvTP & \unknownTP  \\
+        FP      & \envOpsFP & \fileOpsFP & \networkOpsFP & \argvFP & \unknownFP  \\
+        \hline
+        TP-Rate & \envOpsTpRate & \fileOpsTpRate & \networkOpsTpRate & \argvTpRate & \unknownTpRate \\
+        \hline
+      \end{tabular}
+    \end{adjustbox}
+    \caption{Manual verification of \manualAnalysisCmdInjTotal \trupoc{}s (full results in Table~\ref{tab:mango_manual}) of only the True Positives (TP) and False Positives (FP) (\trupoc{}s that we were unable to classify are removed) for different input sources (environment variables, files, network, arguments, and unknown).
+      Note that a single \trupoc{} can have multiple input sources, and thus belong to multiple input sources.}
+    \label{tabel:rates}
+\end{table}

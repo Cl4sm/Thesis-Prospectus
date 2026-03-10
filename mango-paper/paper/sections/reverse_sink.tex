@@ -1,0 +1,52 @@
+\section{\rev}
+\label{sec:rev}
+
+\input{assets/algorithms/reverse_sink}
+
+% Forward data-flow analysis faces the path explosion problem, which significant increases analysis time.
+Finding all input sources and performing forward data-flow analysis to find all vulnerability sinks is expensive. 
+It is frequently unknown if values that depend on input sources will eventually flow into the vulnerability sink with a meaningful degree of control or exploitability.
+Shorter call traces for forward data-flow analysis imply a shorter analysis time because no extra time is spent analyzing irrelevant functions.
+
+We propose a new workflow, \rev, inspired by human reverse engineers.
+Reverse engineers tend to work \emph{backwards} from potentially vulnerable program locations (e.g., a call to \texttt{system()}) to understand which input sources (if any) can reach this location instead of working from the input sources and exploring every possible path the inputs can take.
+These special program locations frequently coincide with vulnerability sinks for taint-style vulnerabilities.
+In the context of human reverse engineering, these special locations are also referred to as \emph{beacons}~\cite{votipka2019observational}.
+
+Tracing backward from vulnerability sinks instead of forward to the sinks limits the explored program paths to only those directly relevant to the sinks.
+%Source-to-Sink Analysis is prone to over-analysis as it is unclear if the value reaching the sink belongs to a source until the analysis finishes.
+By analyzing caller function by caller function, backward through a call stack, \rev limits the analysis required to determine reachability.
+Source-to-Sink Analysis may explore any number of unimportant paths to discover how or even if tainted data will reach the sink.
+
+DTaint~\cite{cheng2018dtaint} employs a similar Sink-to-Source approach, but it requires analysis of every function in the callgraph backwards to the highest-level source, thereby analyzing many functions that ultimately do not affect the sink.
+During our Sink-to-Source analysis, if \rda determines that a data flow flows into an unexploitable variable (e.g., a properly sanitized string or a string that is ultimately converted into an integer), it immediately abandons this variable and terminates the data flow.
+Consider the example \texttt{sprintf(buf, "cal \%d", year)}, \rda performs a data-dependency analysis that determines that \texttt{buf} will never contain a vulnerable string and terminates its analysis. 
+However, DTaint will continue to analyze up through the call chain until it can find a source for \texttt{year}. 
+
+Our \rev algorithm, as shown in Algorithm~\ref{alg:rev-sink}, begins by finding all possible traces to the sink for a given CFG.
+We perform a coarse-grain value dependency analysis on each caller-to-callee pair, working backward from our sink in every trace.
+The analysis results determine if data reaching the sink solely depends on data from the specified caller in the trace.
+
+Suppose there is a call to \texttt{system} with a command that is entirely dependent on the result of reading a file, environment variables, NVRAM variables, or data from the network; the analysis is halted as higher-level caller functions in the callstack will not contribute to the data that \texttt{system()} ultimately depends on.
+If no variables are dependent on the caller function arguments, there is no need to analyze anything further, but we must keep the current trace depth for data dependencies inside the caller function.
+If the data depends on function arguments, the analysis continues up the call stack.
+However, if during the analysis of the next call-depth, all callee functions have constant or fully resolvable values, then we discard the current call-depth and retain a final state with set arguments for the callee.
+To analyze the caller function of a fully analyzed function, we simply repeat all steps from the beginning except instead of the caller/callee pair being a parent function and the sink, the parent function of the sink becomes the new callee.
+
+\begin{code}
+    \inputminted[
+        frame=lines,
+        fontsize=\footnotesize,
+        linenos,
+        breaklines
+    ]{c}{assets/code/reverse_sink_example.c}
+    \caption{An example of \rev.}
+    \label{simplerev}
+\end{code}
+
+In the case of Listing~\ref{simplerev}, \rda starts analyzing from \textit{say\_hello} and marks \textit{buf} with an unresolved value as it could contain anything at this point in the analysis as far as \rda is aware.
+\rda will trace the dependency of \textit{buf} to \textit{say\_hello}'s arguments and decide to analyze \textit{say\_hello}'s parent functions to resolve the values in \textit{buf}.
+The analysis will continue from \textit{bar}, the parent function of \textit{say\_hello}, and \rda will determine that there is no need to analyze any of \textit{bar}'s parent functions, in this case \textit{foo}, as the data in \textit{buf} is only dependent upon the result of the call to \textit{nvram\_get}.
+
+The ablation study described in Section~\ref{sec:ablation} evaluates the benefits of \rev.
+With all things equal, \rev improves analysis time by \tracePercentage.

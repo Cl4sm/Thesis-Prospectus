@@ -1,0 +1,44 @@
+\subsection{\discoveryguy}
+
+The \discoveryguy agent takes as input a \emph{sink function}, which has been identified as potentially containing a bug, tries to identify the actual vulnerability, and, if successful, creates a Python script that generates the corresponding crashing seed. 
+
+\discoveryguy is composed of several sub-agents that cooperate to achieve its overall goal. 
+%as shown in Figure~\ref{fig:discoveryguy}.
+Note that \discoveryguy is invoked repeatedly on each function that has been identified as interesting by \codeswipe.
+
+%\begin{figure*}[h]
+%  \centering
+%  \includegraphics[width=\linewidth]%{figures/discoveryguy.png}
+%  \caption[\discoveryguy]{The \discoveryguy algorithm, which shows the control flow among the various sub-agents.}
+%  \label{fig:discoveryguy}
+%\end{figure*}
+
+\discoveryguy is also invoked whenever a SARIF report is received.
+In this case, in addition to the sink function(s), \discoveryguy receives as input the type of vulnerability identified by the static analysis tools.
+At the end of the process, if a crashing seed is found, the SARIF report is considered valid.
+
+Finally, when a patch is generated, the patched function is passed to \discoveryguy together with the original code, and the agent is asked to try to bypass the patch and still exploit the vulnerability.
+If \discoveryguy can find a crashing seed, the patch is invalidated.
+
+These three use cases follow a similar workflow, which is described hereinafter.
+
+As the first step, \discoveryguy analyzes the call graph contained in the \analysisgraph to identify the harnesses that could be used to reach the sink function.
+This analysis includes a graph reduction step that simplifies the structure of the call graph to make its size consumable by the LLM (i.e., sets of nodes with the same pre- and post-dominator nodes are merged).
+If no harnesses are found, possibly because of the incompleteness of the information extracted from the target's code, \discoveryguy asks the LLM to produce an educated guess of which harnesses among those available are most likely to reach the sink function. 
+
+Then, the information about the suitable harnesses is passed to \discoveryguy's \jimmypwn agent, which is based on \claudefour.
+\jimmypwn is tasked with identifying the vulnerability and producing a program that generates a crashing seed. \jimmypwn has access to a grepping tool that can find specific patterns in the overall code base.
+
+If successful, \jimmypwn generates a report that contains the following information: (i) the harness that is used to reach the sink function and the associated call trace, (ii) the relevant path conditions that are necessary to drive the harness input to the location of the vulnerability, and (iii) a script that, when executed, generates the crashing seed.
+
+This report is passed to the \seedgeneration agent (based on \ofourmini), which refines the original seed generation script to verify that it actually crashes the function.
+This is necessary because sometimes, even if the vulnerability is successfully identified, the script that generates the crashing seed is not effective.
+For example, the \jimmypwn agent might have identified an overflow that affects a 256-character buffer, but because of the LLM imprecision, the seed-generation script creates an input that is only 128-byte long.
+Therefore, \seedgeneration iterates a few times on the seed generation script to improve its effectiveness.
+
+If this process does not converge to a working script, then the information about the failed script (why and where it fails) is sent back to the \jimmypwn agent requesting the generation of a new report for this vulnerability.
+This feedback loop is repeated a few times until an effective seed generation program is created (and in case of failure, the whole process is aborted).
+Note that in the case of a SARIF report analysis, this process is repeated for additional rounds, as there is a higher confidence that the sink function contains a vulnerability. 
+
+% Understand the role of the crash checker
+

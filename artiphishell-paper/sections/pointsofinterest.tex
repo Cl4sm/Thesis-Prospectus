@@ -1,0 +1,15 @@
+\section{Points of Interests}
+\label{pointsofinterests}
+
+After preprocessing and initialization, an important task is to analyze the code of the target application to identify which functions are the most likely to contain vulnerabilities so that vulnerability analysis effort (e.g., fuzzing) can be first directed towards the location that are most likely to contain flaws.
+
+A first step is to use static analysis tools in order to analyze the source code.
+\artiphishell uses off-the-shelf tools such as semgrep~\cite{semgrep} and CodeQL~\cite{codeql} to identify locations that are likely vulnerable.
+
+In addition, there is an agent called LLuMinar, which uses our fine-tuned LLM to retrieve context and identify potentially vulnerable functions.
+
+The result of this phase is a list of functions ordered by their likelihood to contain a vulnerability.
+
+
+
+

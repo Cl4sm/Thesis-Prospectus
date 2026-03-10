@@ -1,0 +1,22 @@
+\begin{table}[tb]
+    \centering
+    \begin{adjustbox}{width=\textwidth}
+      \begin{tabular}{l:c:c}
+        \hline
+        
+        & \textbf{Buffer Overflows} & \textbf{Command Injections} \\
+        \hline
+        \trupoc{}s          &  \alertedOverflow & \alertedCmdi \\
+        Vulnerability Sinks        &  \callsiteOverflow   & \callsiteCmdi \\
+        Vulnerability Context Paths   &  \contextOverflow   & \contextCmdi \\
+        \hline
+      \end{tabular}
+    \end{adjustbox}
+      \caption{
+        An analysis of \mango against a baseline approach.
+        In the na\"{\i}ve baseline approach, every vulnerable sink function call is marked as a potential vulnerability.
+        However, to verify the user must analyze the paths backwards from the vulnerable sink function.
+        Therefore, \mango reduces the need to look at Vulnerable Context Paths to \trupoc{}s, thus reducing significant verification effort from the human analyst.
+    }
+    \label{table:sinks}
+\end{table}
