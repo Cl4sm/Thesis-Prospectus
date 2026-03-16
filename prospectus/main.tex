@@ -26,6 +26,7 @@
 \usepackage{float}
 \usepackage{listings}
 \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\usepackage{indentfirst}
 
 \usepackage{tikz}
 
@@ -105,12 +106,12 @@
 % Roman numbering begins here so abstract = page i (matching Marzieh)
 \pagenumbering{roman}
 
-% ---- Abstract ----
-\chapter*{ABSTRACT}
-\addcontentsline{toc}{chapter}{ABSTRACT}
-\input{frontmatter/abstract}
-
-\newpage
+% ---- Abstract (removed for now) ----
+%\chapter*{ABSTRACT}
+%\addcontentsline{toc}{chapter}{ABSTRACT}
+%\input{frontmatter/abstract}
+%
+%\newpage
 
 % ---- Table of Contents ----
 \tableofcontents
@@ -131,10 +132,11 @@
 \addtocontents{toc}{\protect\vspace{0.5em}\noindent CHAPTER\par}
 
 \input{chapters/01-introduction}
-\input{chapters/02-related-work}
+% \input{chapters/02-related-work}
 \input{chapters/03-mango}
 \input{chapters/04-artiphishell}
 \input{chapters/05-proposed-work}
+\input{chapters/06-completed-planned}
 
 % ---- References ----
 \input{frontmatter/references}

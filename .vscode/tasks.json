@@ -1,0 +1,33 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Prospectus: Build PDF",
+      "type": "shell",
+      "command": "make",
+      "windows": {
+        "command": "build.bat"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/prospectus"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Prospectus: Watch PDF",
+      "type": "shell",
+      "command": "make watch",
+      "windows": {
+        "command": "build.bat watch"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/prospectus"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

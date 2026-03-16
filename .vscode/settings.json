@@ -1,0 +1,27 @@
+{
+  "latex-workshop.latex.autoBuild.run": "onFileChange",
+  "latex-workshop.view.pdf.viewer": "tab",
+  "latex-workshop.latex.tools": [
+    {
+      "name": "latexmk-prospectus",
+      "command": "latexmk",
+      "args": [
+        "-pdf",
+        "-interaction=nonstopmode",
+        "-halt-on-error",
+        "-synctex=1",
+        "-view=none",
+        "%DOC%"
+      ]
+    }
+  ],
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "latexmk-prospectus",
+      "tools": [
+        "latexmk-prospectus"
+      ]
+    }
+  ],
+  "latex-workshop.latex.recipe.default": "first"
+}

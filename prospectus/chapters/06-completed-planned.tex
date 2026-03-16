@@ -1,0 +1,23 @@
+% ============================================================
+%  CHAPTER 6: COMPLETED AND PLANNED WORK
+% ============================================================
+\chapter{Completed and Planned Work}
+\label{ch:completed-planned}
+
+\paragraph{Completed work.} I have completed the following work proposed for my dissertation:
+
+\begin{itemize}
+  \item \textbf{Operation Mango: Scalable Discovery of Taint-Style Vulnerabilities in Binary Firmware Services.}
+  Published in the Proceedings of the 33rd USENIX Security Symposium (USENIX Security 2024).
+  This work introduces \rda, a binary data-flow analysis that uses Rich Expressions and sink-to-source analysis to scale taint-style vulnerability detection to entire firmware images.
+  On the standard benchmark dataset, \mango analyzed $27\times$ more binaries than the prior state-of-the-art (SaTC) in comparable time and discovered 56 additional real vulnerabilities.
+
+  \item \textbf{Artiphishell: An AI-Powered Cyber Reasoning System for Automatic Vulnerability Identification and Patching.}
+  Published at DEF CON 2025 as part of the DARPA AIxCC competition.
+  This work presents a multi-agent Cyber Reasoning System that coordinates fuzzing, LLM-driven static scanning, root-cause analysis, and automated patch generation through a shared Analysis Graph.
+  I led the project's design and implementation within the Shellphish team.
+\end{itemize}
+
+\paragraph{Planned work.} Regarding the direction of the project discussed in Chapter~\ref{ch:proposed}, I have completed a working prototype of Full-Reach and evaluated it on a single firmware image (NETGEAR R7000).
+The prototype confirms 51 of 161 statically-reported closures as reachable command injection paths and synthesizes concrete proof-of-concept exploits for each.
+I am working towards expanding the evaluation to additional firmware images and vendors, completing the baseline comparisons described in the planned evaluation (Section~\ref{sec:proposed-evaluation}), and extending the system to validate buffer overflow candidates.

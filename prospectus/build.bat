@@ -5,15 +5,17 @@ REM
 REM Usage:
 REM   build          - Build PDF (two passes for cross-refs)
 REM   build once     - Single pass (faster)
+REM   build watch    - Auto-rebuild PDF on file changes (Ctrl+C to stop)
 REM   build clean    - Remove build artifacts
 REM   build distclean- Remove artifacts + PDF
 
 if "%1"=="" goto build
 if "%1"=="once" goto once
+if "%1"=="watch" goto watch
 if "%1"=="clean" goto clean
 if "%1"=="distclean" goto distclean
 echo Unknown command: %1
-echo Usage: build [once^|clean^|distclean]
+echo Usage: build [once^|watch^|clean^|distclean]
 goto end
 
 :build
@@ -42,6 +44,14 @@ if errorlevel 1 (
     echo BUILD FAILED. Check main.log for details.
 ) else (
     echo BUILD SUCCESSFUL: main.pdf
+)
+goto end
+
+:watch
+echo === Watch mode (Ctrl+C to stop) ===
+latexmk -pdf -pvc -view=none -interaction=nonstopmode -halt-on-error main.tex
+if errorlevel 1 (
+    echo WATCH EXITED WITH ERRORS. Check main.log for details.
 )
 goto end
 
