@@ -1,0 +1,153 @@
+% ============================================================
+%  APPENDIX
+%  Supplementary material organized by chapter/paper.
+% ============================================================
+
+\appendix
+
+% ---- Mango Supplementary Material ----
+\chapter{Mango Supplementary Material}
+\label{app:mango}
+
+\section{Additional Firmware Tests}
+\label{app:mango-additional-firmware}
+
+To demonstrate extensibility beyond the \karonteDataset, we randomly selected six firmware samples from different vendors (shown in Table~\ref{tab:appendix_firmware_test}).
+No additional effort or analyses were added to \toolname to generate these results; they were produced in the same manner as the results discussed in the evaluation (Section~\ref{sec:mango-eval}).
+\toolname found a significant number of \trupoc{}s in these firmware samples, including \trupoc{}s in Belkin and Linksys firmware images that were not tested in the \karonteDataset.
+Each generated \trupoc was manually analyzed to determine the overall true positive rate, which was 41.3\%.
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{lr:rrrrr}
+        \hline
+        \textbf{Vendor} & \textbf{Device} & \multicolumn{5}{:c}{\textbf{\toolname}}                                                                             \\
+                        &                 & \textbf{\trupoc}                        & \textbf{TP} & \textbf{Time} & \textbf{\trupoc Bins} & \textbf{Total Bins} \\
+        \hline
+        D-Link          & DIR600          &
+        1               & 0               & 0:47h                                   & 1           & 48                                                          \\
+
+        D-Link          & DIR300          &
+        1               & 0               & 0:44h                                   & 1           & 40                                                          \\
+
+        Belkin          & F9J1102         &
+        52              & 25              & 1:46h                                   & 4           & 71                                                          \\
+
+        Linksys         & WRT320N         &
+        22              & 3               & 0:07h                                   & 4           & 49                                                          \\
+
+        Trendnet        & TEW733          &
+        4               & 0               & 0:50h                                   & 2           & 58                                                          \\
+
+        Tenda           & N60             &
+        109             & 50              & 3:25h                                   & 8           & 65                                                          \\
+        \hline
+        Total           & -               &
+        189             & 78              & 7:39h                                   & 20          & 331                                                         \\
+        \hline
+    \end{tabular}
+    \caption{
+        \toolname analysis on six firmware images outside the dataset of \karonte and \satc.
+    }
+    \label{tab:appendix_firmware_test}
+\end{table}
+
+% ---- Artiphishell Supplementary Material ----
+\chapter{Artiphishell Supplementary Material}
+\label{app:artiphishell}
+
+\section{Services}
+\label{app:artiphishell-services}
+
+The different components of \artiphishell{} rely on various services to operate.
+These services are initialized and dynamically configured once the required pre-processing stages have completed and the necessary artifacts are available.
+
+\subsection{Function Resolver}
+\label{app:function-resolver}
+
+Locating the original source-code implementations of functions is a critical task for all components in \artiphishell{}.
+While this task appears rudimentary at first glance, real code-bases commonly include build-steps that complicate a direct mapping of compilation-artifact function representations back to the original code.
+
+Notable examples of this include auto-generated code (e.g., in parser-generators like Flex, YACC, etc.), build and link-time performance optimizations (e.g., SQLite's ``amalgamation'') and more.
+
+\section{Nautilus Grammar Formats}
+\label{app:nautilus-grammar-formats}
+
+\begin{figure}[H]
+\centering
+\textbf{Nautilus JSON Format}
+\begin{lstlisting}[language={},basicstyle=\footnotesize\ttfamily,frame=single]
+{ "rules": {
+    "START": [[{"NT": "HTML"}]],
+    "HTML": [
+      [ {"T": "<html>"},
+        {"NT": "HEAD"},
+        {"NT": "BODY"},
+        {"T": "</html>"}
+      ]],
+    "HEAD": [
+      [{"T": "<head>"},
+        {"NT": "TITLE"},
+        {"T": "</head>"}
+      ]],
+    "TITLE": [
+      [{"T": "<title>"},
+        {"NT": "TEXT"},
+        {"T": "</title>"}
+      ]],
+    "BODY": [
+      [{"T": "<body>"},
+        {"NT": "CONTENT"},
+        {"T": "</body>"}
+      ]],
+    "CONTENT": [
+      [{"NT": "PARAGRAPH"}],
+      [{"NT": "HEADING"}],
+      [{"NT": "PARAGRAPH"}, {"NT": "CONTENT"}]],
+    "HEADING": [
+      [{"T": "<h1>"},
+        {"NT": "TEXT"},
+        {"T": "</h1>"}
+      ]],
+    "PARAGRAPH": [
+      [{"T": "<p>"},
+        {"NT": "TEXT"},
+        {"T": "</p>"}
+      ]],
+    "TEXT": [
+      [{"T": "Hello World"}]
+    ]}}
+\end{lstlisting}
+
+\textbf{Nautilus Python Format}
+\begin{lstlisting}[language=Python,basicstyle=\footnotesize\ttfamily,frame=single]
+# Basic HTML Grammar
+ctx.rule("START", b"{HTML}")
+
+# HTML structure
+ctx.rule("HTML", b"<html>{HEAD}{BODY}</html>")
+
+# Head section
+ctx.rule("HEAD", b"<head>{TITLE}</head>")
+ctx.rule("TITLE", b"<title>{TEXT}</title>")
+
+# Body section
+ctx.rule("BODY", b"<body>{CONTENT}</body>")
+
+# Content alternatives
+ctx.rule("CONTENT", b"{PARAGRAPH}")
+ctx.rule("CONTENT", b"{HEADING}")
+ctx.rule("CONTENT", b"{PARAGRAPH}{CONTENT}")
+
+# Elements
+ctx.rule("HEADING", b"<h1>{TEXT}</h1>")
+ctx.rule("PARAGRAPH", b"<p>{TEXT}</p>")
+
+# Text content
+ctx.literal("TEXT", b"Hello World")
+\end{lstlisting}
+
+\caption{Side-by-side comparison of Nautilus supported JSON and Python format for grammar representation}
+\label{fig:grammar-format-comparison}
+\end{figure}

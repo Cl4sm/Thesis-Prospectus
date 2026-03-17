@@ -16,7 +16,7 @@ and this count only reflects vulnerabilities that have been publicly reported.
 The security community has responded with automated techniques for finding vulnerabilities at scale.
 Static analyzers scan entire codebases for dangerous patterns.
 Coverage-guided fuzzers generate millions of test inputs per second.
-Symbolic execution engines reason about program paths mathematically.
+Symbolic execution engines reason about program paths.
 These tools have stretched the volume of vulnerability detection far beyond what manual auditing can sustain,
 and they continue to improve.
 Yet a persistent gap separates \emph{detecting} a potential vulnerability from \emph{confirming} that it is exploitable.
@@ -25,119 +25,120 @@ Fuzzers produce crashes that may not be security-relevant.
 Symbolic execution engines often cannot scale to whole programs.
 Each technique, in isolation, yields partial evidence.
 
-Skilled vulnerability researchers close this gap through forms of reasoning that current tools discard.
+Vulnerability researchers generate evidence of vulnerabilities not through any single technique, but through a combination of approaches.
 When an analyst examines a static analysis report, they do not simply check whether a data flow
 exists from source to sink; they evaluate what happened to the value along the way, whether
 the path is reachable under realistic conditions, and how findings from one technique corroborate
 those of another.
 These judgments, about value transformation, path feasibility, and cross-technique corroboration, are the
-difference between a list of candidates and a confirmed vulnerability.
-The central argument of this dissertation is that encoding these specific forms of practitioner reasoning
-into automated systems can produce scalable vulnerability discovery with progressively stronger evidence
-for each finding.
+difference between a list of candidates and a feasible vulnerability.
 
 
 \section{Firmware Vulnerability Discovery}
 
 The Internet of Things has placed billions of devices into homes, offices, and critical infrastructure, with projections exceeding 30 billion connected
 devices by the end of the decade~\cite{statista2024iot}.
-These devices run firmware that is frequently complex, feature-rich, and developed under resource constraints that push security to the margins.
+These devices run firmware that is frequently complex, feature-rich, and developed under resource constraints which only increases the difficulty of security testing.
 The Mirai botnet~\cite{antonakakis2017mirai} demonstrated the consequences when hundreds of thousands of such devices were conscripted into a DDoS network
 that disrupted major Internet infrastructure.
 A single vendor ships hundreds of firmware builds across its product line, each with minute adjustments, patches, and changes that make it slightly
 different from similar firmware in its cohort.
 Manual auditing cannot keep pace with this volume: the global cybersecurity workforce gap reached 4.8 million unfilled positions in
-2024~\cite{isc2workforce2024}, and firmware security demands specialized binary analysis skills that even many security professionals lack.
+2024~\cite{isc2workforce2024}, and firmware security demands specialized binary analysis skills beyond normal user-land programs.
 
 The dominant automated approach to finding taint-style vulnerabilities in firmware (such as command injection and buffer overflows) is to trace data
 flows from attacker-controlled sources to dangerous sinks.
 Tools like Karonte~\cite{redini2020karonte}, SaTC~\cite{chen2021satc}, DTaint~\cite{cheng2018dtaint}, and Saluki~\cite{gotovchits2018saluki} all
 adopt this approach.
-The central limitation of these tools is the information they track: a single bit per value, tainted or not.
-This representation discards precisely the information a human analyst uses to judge exploitability.
-When an analyst traces a value from a network input to \texttt{system()}, they reason about what happened to that value along the way.
-If it was converted to an integer by \texttt{atoi()}, or truncated by \texttt{snprintf()}, or sanitized by a regular expression,
-the analyst judges that path as non-exploitable.
-Binary taint tracking cannot encode these judgments.
-The consequence is twofold.
-First, tools that track only taint bits produce false positives: they flag paths where the value has been sanitized beyond exploitation.
+The central limitation of this approach is that taint tracking loses information of how values reach the sink, intact or not.
+When an analyst traces a value from a network input to a sink, they reason about what happened to that value along the way.
+Integer conversion, truncation, or sanitization are just a few of the factors analysts use to judge when determining if a path is exploitable.
+Conventional binary taint tracking does not encode these judgments.
+Tools that track only tainted bits produce false positives: they flag paths where the value has been sanitized beyond exploitation \(over tainting\).
 Studies of static analysis adoption have repeatedly identified false positives as the primary barrier to practical
 use~\cite{johnson2013staticanalysis}.
-Second, existing tools restrict their analysis scope to achieve tractable running times, analyzing only ``border binaries'' that appear to handle
+Existing tools for firmware static analysis attempt to reduce false positives by restricting their analysis scope to achieve tractable running times, analyzing only ``border binaries'' that appear to handle
 network input~\cite{chen2021satc, redini2020karonte}.
 This filtering discards the majority of the firmware.
-On the standard Karonte dataset, SaTC analyzes 131 of 3,599 binaries; Karonte analyzes 312.
+On the same dataset, Karonte and SaTC analyze a maximum of 131 of 3,599 binaries.
 Vulnerabilities in the remaining binaries go unexamined.
 
 In Chapter~\ref{ch:mango}, I present Operation Mango~\cite{gibbs2024mango}, a static data-flow analysis engine that encodes value-level reasoning into
 firmware vulnerability discovery.
-\mango's core analysis, \rda, tracks the full transformation history of values through Rich Expressions rather than binary taint bits, capturing the
-same judgments a human analyst applies when evaluating exploitability.
+\mango's core analysis, \rda, tracks the full transformation history of values through Rich Expressions rather than binary taint bits.
 Combined with backward tracing from sinks (Sink-to-Source) and selective callee skipping (Assumed Nonimpact), Mango analyzes every binary in a firmware image.
 On the Karonte dataset, Mango covered all 3,599 binaries while averaging 8 minutes per binary, compared to SaTC's 6.5 hours.
 On a large-scale corpus of 1,698 firmware images (770,374 binaries), Mango produced 10,834 ranked vulnerability alerts and confirmed 166 exploitable
 vulnerabilities in a sampled audit.
 
 
-\section{AI Cyber Reasoning Systems}
+\section{Autonomous Cyber Reasoning Systems}
 
-Mango's Rich Expressions carry strong evidence about whether a value reaching a sink is still exploitable, but they cannot determine whether the specific
-sequence of branches required to reach that sink is actually satisfiable.
-The result is candidates with evidence attached, but no proof that the underlying program path is feasible.
-This limitation is not unique to Mango.
-More broadly, no single analysis technique produces sufficient evidence to confirm a vulnerability on its own.
+Confirming that a vulnerability is real requires more than any single analysis technique can provide.
 Fuzzers produce crashes that need diagnosis.
-Static analyzers flag suspicious patterns without execution context.
+A segmentation fault does not, by itself, reveal the root cause, the vulnerable input field, or whether
+the bug is security-relevant.
+Static analyzers flag suspicious patterns without execution context, and studies of their adoption consistently identify false positives as the primary
+barrier to practical use~\cite{johnson2013staticanalysis}.
 LLM-based scanners identify code that resembles known vulnerability classes but cannot verify their findings dynamically~\cite{thapa2022vuldeepecker}.
-Each technique captures a different facet of the problem; each, alone, remains incomplete.
+Each technique captures a different facet of the problem, alone, each tool produces partial evidence that a human analyst must evaluate, correlate, and
+either confirm or discard.
 
-Experienced security teams address this limitation through workflow knowledge: the understanding of how to coordinate multiple independent techniques so that
-their findings reinforce one another.
-A team running a security assessment will fuzz a target, scan its source code, review crash reports, and cross-reference findings across all three.
-When a fuzzer crashes on a function that a static analyzer also flagged, and a manual review confirms the root cause, the team has built a case through
+Observational studies of vulnerability researchers show how practitioners close this gap~\cite{votipka2019observational}.
+Analysts do not run a single tool and accept its verdict.
+They fuzz a target, scan its source code, review crash reports, and cross-reference findings across all three.
+When a fuzzer crashes on a function that a static analyzer also flagged, and manual review confirms the root cause, the analyst has built a case through
 convergent evidence that no single technique could produce.
-This multi-technique coordination is a form of practitioner knowledge that current automated systems lack.
+This multi-technique coordination, the understanding of how to sequence independent analyses so that their findings reinforce one another, is a form of
+practitioner knowledge that current automated systems discard.
 Each tool operates in its own silo, producing outputs that a human analyst must manually integrate, and the expertise required for that integration
-remains one of the scarcest resources in security.
+remains one of the scarcest resources in security~\cite{isc2workforce2024}.
 
-DARPA's Cyber Grand Challenge~\cite{darpa2016cgc} in 2016 demonstrated the first generation of autonomous Cyber Reasoning Systems operating on
-purpose-built binaries.
-DARPA's AI Cyber Challenge (AIxCC)~\cite{darpa2025aixcc}, a \$29.5 million two-year competition launched in 2024, raised the bar to real-world
-open-source software: projects like the Linux kernel, SQLite, and Jenkins.
+DARPA's Cyber Grand Challenge (CGC)~\cite{darpa2016cgc} in 2016 produced the first generation of autonomous Cyber Reasoning Systems (CRS) that
+attempted to replace human integration.
+Systems such as Mechanical Phish~\cite{shoshitaishvili2018mechanical} and Mayhem~\cite{cha2012mayhem} demonstrated that autonomous
+vulnerability discovery, exploitation, and patching were possible, but only under the constraints of a purpose built operating system (DECREE)
+with simplified binaries, input formats, and no library dependencies.
+DARPA's AI Cyber Challenge (AIxCC)~\cite{darpa2025aixcc}, a \$29.5 million competition launched in 2024, challenged
+this limitation by targeting real-world open-source software: the Linux kernel, SQLite, Jenkins, and similar projects whose scale, language diversity,
+and input complexity exceeded what any single technique could handle alone.
 AIxCC required systems that find, validate, and patch vulnerabilities with zero human intervention, forcing teams to encode the multi-technique workflow
-knowledge that human teams apply naturally.
+knowledge that human security teams apply naturally.
 
-In Chapter~\ref{ch:artiphishell}, I present Artiphishell, a fully autonomous Cyber Reasoning System designed and led by the author at ASU's SEFCOM lab for AIxCC.
+In Chapter~\ref{ch:artiphishell}, I present Artiphishell, a fully autonomous CRS designed and led by team Shellphish for AIxCC.
 Artiphishell encodes multi-technique workflow knowledge by coordinating coverage-guided fuzzing, grammar-based fuzzing, LLM-powered vulnerability
-scanning, statistical root-cause analysis, and AI-driven patching through a multi-agent pipeline.
-All agents share state through the Analysis Graph, a central data structure that enables the same cross-referencing that human teams perform: when a fuzzer
-crashes on a function that the LLM scanner also flagged, and root-cause analysis localizes the bug, and a patch fixes it without breaking
-functionality, the system has built convergent evidence for the vulnerability.
-Artiphishell advanced to the AIxCC semi-finals and was presented at DEF CON 2025.
+scanning, statistical and LLM-based root-cause analysis, and AI-driven patching through a multi-agent pipeline.
+All agents share state through the Analysis Graph, a central knowledge base that enables the same cross-referencing that human teams perform.
+The system builds convergent evidence for a vulnerability, for example: a fuzzer finds a crash in a function that the LLM scanner also flagged, root-cause analysis
+localizes the bug, and a patch is generated which passes the validation pipeline without introducing regressions. 
 
 
 \section{Closing the Loop: Symbolic Execution for Path Feasibility}
 
-Both Mango and Artiphishell produce vulnerability candidates backed by partial or convergent evidence, but neither can formally determine whether a specific
-program path is satisfiable.
-Mango's Rich Expressions track how a value was constructed, not whether execution can actually reach the sink along the flagged path.
-Artiphishell's convergent evidence provides strong confidence, but confidence is not proof.
-In both cases, a human analyst fills the gap through mental simulation: tracing the control flow, evaluating branch conditions, and judging whether a concrete
-input could drive execution along the flagged path.
-This mental simulation is the final form of practitioner reasoning that this dissertation seeks to automate.
+Scalable static analyzers for firmware, including \toolname, \satc, \karonte, etc. produce vulnerability candidates, but they cannot prove that any individual candidate is
+reachable under conditions that trigger the bug.
+The data flow may exist, and the value at the sink may appear exploitable, yet the specific sequence of branches required to reach that sink
+could be unsatisfiable given the program's actual constraints.
+In firmware, this problem is compounded by cross-binary communication: a value may pass through NVRAM, shared memory, or a socket between processes,
+and the analyst must reason about feasibility across multiple binaries with limited visibility into each one.
+A human analyst carefully traces control flow, evaluates branch conditions, and judges whether a concrete input could drive the program along the flagged path.
+This path feasibility reasoning by humans is expensive, time-consuming, and requires domain expertise.
 
-Symbolic execution~\cite{king1976symbolic} automates this reasoning by treating program inputs as symbolic variables and collecting path constraints that,
+Symbolic execution~\cite{king1976symbolic} automates this path-based reasoning by treating program inputs as symbolic variables and collecting path constraints that,
 when solved, produce concrete triggering inputs.
-However, path explosion~\cite{krishnamoorthy2010tackling} makes full-program symbolic execution intractable for real software.
-Binary analysis frameworks like angr~\cite{shoshitaishvili2016sok} perform symbolic execution on VEX, a low-level intermediate representation that
-discards type information and structured control flow.
-Operating at this level produces unnecessarily complex SMT constraints and explores paths that a higher-level representation would prune.
-Prior work has shown that bridging static and dynamic techniques can recover precision lost by either in isolation~\cite{vadayath2022arbiter},
-but no existing system applies this principle to validate the specific candidates that a scalable static engine like Mango produces.
+However, path explosions~\cite{krishnamoorthy2010tackling} make full-program symbolic execution intractable for anything beyond a toy program.
+Deeply nested loops, indirect calls through function tables, and library code that the analysis must model or explore significantly hinders progress.
+Systems like Driller~\cite{stephens2016driller} and Arbiter~\cite{vadayath2022arbiter} have shown that combining symbolic execution with other
+techniques can recover precision that either loses in isolation, but these hybrid approaches operate on low-level intermediate
+representations.
+Operating at the granularity of assembly and assembly-like representations produces unnecessarily complex SMT constraints, causing executions to stagnate or terminate prematurely.
 
 In Chapter~\ref{ch:proposed}, I propose a symbolic execution engine that operates on angr's AIL (angr Intermediate Language), a higher-level IR that
-carries recovered type information and structured control flow from decompilation.
-AIL-level symbolic execution encodes the path feasibility reasoning that practitioners apply when mentally simulating program execution: tighter
-constraints from recovered types, structured loop and conditional handling, and targeted exploration seeded by \mango's static findings.
-The engine plugs directly into \rda{} as a second-phase validator, and coverage data from Artiphishell-style fuzzing guides path prioritization,
-closing the loop across all three projects.
+carries recovered type information and structured control flow in the form of a near-decompilation representation.
+AIL-level symbolic execution simplifies path feasibility reasoning by dropping Single Static Assignment (SSA), allowing
+constraints from recovered types, structured loop and conditional handling to operate on the variable level of source code.
+The engine consumes static analysis results and proves with high accuracy that a vulnerability candidate is reachable under conditions that trigger the bug.
+Leveraging the inter-program communication networks of firmware, we can greatly simplify the path constraints by treating inter-program communication as a form of symbolic input,
+allowing us to bypass complex path conditions that would otherwise require deep symbolic execution.
+For conditions and sub-routines that still require deep symbolic execution, we substitute symbolic execution with LLM generated subroutines.
+This allows us to greatly increase the speed and fidelity of our analysis.

@@ -1,7 +1,7 @@
 % ============================================================
 %  CHAPTER 5: PROPOSED WORK
-%  Full-Reach: Automated Validation of Static Vulnerability
-%  Candidates Through Directed Symbolic Execution
+%  Automated Validation of Static Vulnerability Candidates
+%  Through Directed Symbolic Execution
 % ============================================================
 \chapter{Proposed Work: Automated Validation of Static Vulnerability Candidates Through Directed Symbolic Execution}
 \label{ch:proposed}
@@ -9,293 +9,53 @@
 \section{Introduction}
 \label{sec:proposed-intro}
 
-Chapters~\ref{ch:mango} and~\ref{ch:artiphishell} present two approaches to automated vulnerability discovery that attack the problem from opposite ends of the precision spectrum.
-\mango's static analysis scales to hundreds of thousands of binaries per firmware image but cannot determine whether a reported source-to-sink flow is actually reachable under the binary's runtime constraints.
-Rich Expressions track value transformations along the data-flow path, recording how attacker input is concatenated, truncated, or formatted before reaching a dangerous sink.
-This evidence is stronger than a taint bit, but it carries no information about branch feasibility: if \rda reports a flow from \texttt{nvram\_get("wan\_ipaddr")} through \texttt{sprintf} to \texttt{system()}, it has no mechanism to determine whether the sequence of conditional checks between those two points is satisfiable.
-The result is a set of candidates that contain real vulnerabilities mixed with false positives, and no automated way to separate them.
+\mango (Chapter~\ref{ch:mango}) can analyze every binary in a firmware image and produce thousands of taint-style vulnerability alerts, each with Rich Expression evidence describing how attacker input transforms from source to sink.
+On the \karonte dataset alone, \mango generates over 2,000 alerts across 49 firmware images.
+However, none of these alerts come with proof: \rda reports data flows but cannot determine whether the conditional checks along those paths are satisfiable under any concrete input.
+Triaging these candidates manually is infeasible at scale.
 
-Artiphishell's fuzzing and LLM-driven analysis produce confirmed crashes when they succeed, but coverage is constrained by how effectively mutation explores the input space.
-Grammar-based fuzzing and LLM-guided seed generation help, but neither can guarantee coverage of deeply-nested code paths that require precise preconditions (specific NVRAM values, particular HTTP parameter combinations, global state flags set by prior handlers).
-The Analysis Graph demonstrates that convergent evidence from independent techniques provides strong validation, but the system cannot produce formal proof that a specific static candidate is or is not reachable.
+Symbolic execution~\cite{king1976symbolic} can automate this validation by producing concrete triggering inputs or proving infeasibility, but whole-program symbolic execution on firmware binaries is intractable due to path explosion~\cite{krishnamoorthy2010tackling} and environmental preconditions (NVRAM flags, proprietary HTTP APIs, cross-binary state) that generic executors cannot satisfy.
 
-This chapter proposes work that closes the gap between these two endpoints.
-The core idea: use directed symbolic execution to replay the specific paths that \mango flagged, determining whether each candidate is reachable and, when it is, synthesizing a concrete proof-of-concept exploit.
-By targeting only the paths that static analysis already identified (rather than exploring the binary exhaustively), the symbolic executor avoids the path explosion that makes conventional symbolic execution intractable on firmware binaries.
+I observe that \mango's static analysis has already solved the hardest part: identifying \emph{which} paths to examine.
+Each closure encodes a complete function-level trace from source to sink.
+Rather than exploring the binary exhaustively, a symbolic executor can replay only these traces, transforming validation from an open-ended search into a bounded verification task.
 
-% ============================================================
-%  PLACEHOLDER FIGURE: Architecture Diagram
-% ============================================================
-% [PLACEHOLDER FIGURE: Full-Reach Pipeline Architecture]
-%
-% This figure should show the end-to-end pipeline:
-%
-%   Mango closures + firmware binary
-%     -> Dispatch Resolution (URL -> handler mapping)
-%     -> Static Precheck & Input Extraction
-%       (constant sink filter, HTTP param discovery, NVRAM guard extraction)
-%     -> LLM-Directed Precondition Recovery
-%       (handler decompilation analysis -> PathPlan)
-%     -> Directed Symbolic Execution
-%       (provenance-preserving hooks for 6 API families)
-%     -> PoC Synthesis & Canary Validation
-%     -> PostFix Retry Loop (diagnose -> fix -> re-execute)
-%     -> Optional: Multi-Stage NVRAM Chain Validation
-%
-% The figure should emphasize the feedback loop between PostFix
-% and execution, and the two-tier precondition recovery
-% (static extraction + LLM planning).
-%
-% Style: block diagram with arrows, similar to Figure 1 in the
-% Mango paper. Recommended tool: TikZ or draw.io exported to PDF.
-%
-\begin{figure}[t]
-  \centering
-  \fbox{\parbox{0.9\textwidth}{\centering\vspace{2em}%
-    \textbf{[PLACEHOLDER]} Full-Reach pipeline architecture.\\[0.5em]
-    Closures from \mango pass through dispatch resolution,
-    two-tier precondition recovery (static + LLM),
-    directed symbolic execution with provenance-preserving hooks,
-    PoC synthesis with canary validation,
-    and PostFix retry with accumulated execution feedback.\\[0.5em]
-    See design notes above for detailed layout description.
-  \vspace{2em}}}
-  \caption{Full-Reach pipeline. Closures from \mango pass through dispatch resolution, precondition recovery (static and LLM-directed), directed symbolic execution with provenance-preserving hooks, and PoC synthesis with optional multi-stage NVRAM chain validation. The PostFix loop retries failed closures with targeted fixes.}
-  \label{fig:fullreach-pipeline}
-\end{figure}
+To this end, I propose a directed symbolic execution system that takes \mango closures as input and produces a verdict (reachable, unreachable, or constant sink) with concrete proof-of-concept inputs for confirmed paths.
+The system operates on angr's AIL, a decompiler-level IR that produces tighter constraints than VEX, and combines static and LLM-directed precondition recovery to handle firmware-specific guards.
+I plan to evaluate this system across multiple firmware images, vendors, and architectures.
 
-\section{Background: The Closure Validation Problem}
-\label{sec:proposed-background}
+\section{Approach}
+\label{sec:proposed-approach}
 
-A \mango \emph{closure} is a structured record containing the function trace from source to sink, the call stack at each function boundary, the sink function and instruction address, the vulnerable argument index, and the vulnerability type (command injection or buffer overflow).
-Each closure represents a candidate vulnerability: a path along which attacker-controlled data may flow to a dangerous sink.
+The proposed system takes \mango closures and a firmware binary as input.
+Rather than exploring the binary exhaustively, the executor targets only the paths that static analysis already identified, avoiding the path explosion that makes conventional symbolic execution intractable.
+For each closure, the system produces a verdict (reachable, unreachable, or constant sink) and, when reachable, a concrete proof-of-concept input.
 
-The validation problem is: given a closure and the firmware binary it was extracted from, determine whether the path is actually executable under the binary's runtime constraints, and if so, produce a concrete input that triggers it.
+The approach operates on angr's AIL (angr Intermediate Language), a higher-level IR that carries recovered type information and structured control flow from decompilation.
+Operating at this level produces tighter constraints and fewer infeasible paths than VEX-based execution.
+To handle firmware-specific guards, the system combines static precondition extraction (identifying NVRAM keys, HTTP parameters, and guard patterns from the decompilation) with LLM-directed precondition recovery for cases where static extraction is insufficient.
+A hybrid concretization policy allows guard checks to resolve deterministically while preserving provenance annotations that track which attacker-controlled sources influence the sink argument.
 
-Three properties make this problem difficult on firmware binaries.
-First, firmware handlers guard sensitive code paths behind runtime checks: NVRAM configuration flags, HTTP parameter comparisons, and global state conditions.
-Without the correct preconditions, symbolic execution deadends at these guards.
-Second, firmware APIs (NVRAM access, HTTP parameter parsing, network I/O, SSL) are proprietary and binary-only; the symbolic executor must model their behavior to advance past them.
-Third, many vulnerabilities span multiple binaries and multiple HTTP requests: one handler writes an NVRAM key, and a second handler (potentially in a different binary) reads that key and passes it to \texttt{system()}.
-Confirming such a vulnerability requires tracing the provenance chain across binary boundaries.
+For vulnerabilities that span multiple binaries through NVRAM, the system traces SET and GET locations across the firmware image using \mango's environment dictionary, constructing multi-stage exploit chains.
 
-\section{Design}
-\label{sec:proposed-design}
-
-The proposed system, Full-Reach, takes a set of \mango closures and a firmware binary as input and produces, for each closure, a verdict (reachable, constant, or unreachable) and, when reachable, a concrete proof-of-concept exploit with canary validation.
-Figure~\ref{fig:fullreach-pipeline} shows the pipeline.
-The design has six stages.
-
-\subsection{Dispatch Resolution}
-\label{sec:proposed-dispatch}
-
-\mango closures contain function addresses along the data-flow path but not the HTTP URL or handler entry point needed for execution.
-Full-Reach bridges this gap by extracting the binary's dispatch table (a NULL-terminated array of URL-to-handler-function-pointer pairs) and matching closure traces to handler entries.
-
-Given a closure, the resolver applies six strategies in decreasing order of confidence: direct match (a trace function is itself a dispatch entry), trace scan (a callee at a trace address matches a handler), infrastructure dispatch (the trace passes through the HTTP dispatcher), deep infrastructure scan, callgraph reachability, and orphan classification (no resolution possible).
-For each resolved closure, the output is the handler address, URL, HTTP method, and resolution confidence category.
-
-\subsection{Static Precheck and Input Extraction}
-\label{sec:proposed-static}
-
-Before symbolic execution, three static analyses reduce the search space.
-
-The \emph{sink precheck} lifts the sink function to AIL and determines whether the sink argument is a compile-time constant (e.g., \texttt{system("reboot")}).
-Such closures receive a \texttt{CONST} verdict without execution: regardless of path feasibility, no attacker-controlled data reaches the sink.
-
-The \emph{parameter discovery} module scans the handler's AIL decompilation for calls to \texttt{http\_get}-family functions, extracting parameter name tokens from string arguments.
-The \emph{NVRAM constraint extraction} module identifies guard patterns (\texttt{acosNvramConfig\_match(key, value)}, \texttt{strcmp(nvram\_get(key), value)}) and extracts both the key and the expected value.
-
-These extracted preconditions seed the PathPlan, a structured configuration object that drives execution.
-
-\subsection{LLM-Directed Precondition Recovery}
-\label{sec:proposed-llm}
-
-For closures where static extraction alone is insufficient, Full-Reach invokes an LLM agent that analyzes the handler's AIL decompilation alongside the closure's trace context.
-The agent has access to tools for decompiling callees, reading string constants from the binary, listing sink callsites, and estimating callee complexity.
-
-The agent outputs a structured override plan containing: HTTP parameters with inferred values, NVRAM key-value overrides, global memory initialization writes (address, value, size), handler call arguments, function stub specifications, and branch hints.
-Results are cached per (binary, handler, trace-hash) to avoid redundant API calls across closures that share the same handler.
-
-The LLM acts as a precondition oracle: it proposes the runtime state needed to reach the sink, but does not guide symbolic execution step-by-step.
-This separation keeps the symbolic execution engine sound (angr semantics govern execution, not LLM output) while containing LLM errors to precondition inference, where they manifest as unreachable verdicts and can be detected and retried.
-
-\subsection{Directed Symbolic Execution with Provenance Tracking}
-\label{sec:proposed-execution}
-
-The core technical challenge is balancing branch steering (to avoid state explosion at guard checks) with provenance tracking (to identify which attacker-controlled sources influence the sink argument).
-Pure symbolic execution creates exponential branching at every NVRAM or parameter check; pure concrete execution discards provenance information.
-
-Full-Reach resolves this with a hybrid concretization policy.
-Hooks for each firmware API family produce annotated bytes, either concrete or symbolic, based on the PathPlan.
-When the PathPlan specifies a known value for an NVRAM key, the hook writes those concrete bytes into the return buffer but attaches a provenance annotation recording the key name and API.
-When no value is specified, the hook writes fully symbolic bytes with the same annotation.
-The same policy applies to HTTP parameter hooks, network receive hooks, and file I/O hooks.
-
-% ============================================================
-%  PLACEHOLDER FIGURE: Concretization Policy
-% ============================================================
-% [PLACEHOLDER FIGURE: Concretization and Provenance Data Flow]
-%
-% This figure should show the data flow from PathPlan through
-% hooks to sink:
-%
-%   PathPlan + TargetConfig
-%     |
-%     +-- HTTP request bytes (concrete, RecvAnnotation)
-%     |     -> recv()/SSL_read() hook
-%     |
-%     +-- NVRAM hook policy (per-key)
-%     |     -> nvram_get() hook
-%     |     -> concrete if key in plan, symbolic otherwise
-%     |     -> NvramAnnotation on all bytes
-%     |
-%     +-- HTTP param hook policy (per-token)
-%           -> http_get() hook
-%           -> concrete if token in plan, symbolic otherwise
-%           -> HttpGetAnnotation on all bytes
-%
-%   All bytes flow through libc/data-move stubs
-%   (strcpy, sprintf, memcpy, etc.)
-%   that copy AST bytes preserving annotation trees
-%
-%   -> Sink argument memory
-%   -> SinkDetector + provenance extraction
-%   -> nvram_keys, http_get_sources, file_sources, recv_sources
-%
-\begin{figure}[t]
-  \centering
-  \fbox{\parbox{0.9\textwidth}{\centering\vspace{2em}%
-    \textbf{[PLACEHOLDER]} Concretization and provenance data flow.\\[0.5em]
-    Hooks consult the PathPlan to decide whether each source returns
-    concrete or symbolic bytes. All bytes carry provenance annotations
-    regardless of concreteness. Libc stubs propagate annotations through
-    data-move operations to the sink argument.
-  \vspace{2em}}}
-  \caption{Concretization policy. Hooks consult the PathPlan to produce annotated bytes (concrete or symbolic). Libc stubs propagate annotation trees through data-move operations. At the sink, provenance extraction identifies every contributing source.}
-  \label{fig:concretization}
-\end{figure}
-
-This design produces three properties simultaneously.
-First, guard checks see concrete values and resolve deterministically: a handler with 10 NVRAM guards that would fork $2^{10}$ states under pure symbolic execution now follows a single path.
-Second, provenance annotations survive through all data-move operations (\texttt{strcpy}, \texttt{strcat}, \texttt{sprintf}, \texttt{memcpy}) because the libc stubs copy bytes at the claripy AST level, preserving the annotation tree.
-Third, at the sink, provenance extraction walks the argument bytes' annotations to identify every source (NVRAM key, HTTP parameter token, file path, socket) that contributed to the command string.
-
-Full-Reach defines seven annotation types, each a subclass of \texttt{claripy.Annotation} with \texttt{eliminatable=False} and \texttt{relocateable=True}: \texttt{NvramAnnotation}, \texttt{HttpGetAnnotation}, \texttt{RecvAnnotation}, \texttt{FileAnnotation}, \texttt{ArgvAnnotation}, \texttt{EnvAnnotation}, and \texttt{RegisterAnnotation}.
-
-Hook installation covers six API families: infrastructure (daemon, fork, signal, sleep), network (socket, recv, send, SSL), NVRAM (nvram\_get, nvram\_read, acosNvramConfig\_match), HTTP parameter parsing, libc string and memory operations, and NVRAM SET detection for chain validation.
-One critical invariant: \textbf{subject-trace functions (the functions on the closure's data-flow path from source to sink) are never hooked}.
-Replacing them would bypass the code that the analysis must verify.
-
-The executor steps the simulation manager with a hard cap on active states and a per-instruction-pointer cap that triggers state merging when exceeded.
-A sink detector breakpoint monitors \texttt{system}, \texttt{popen}, and the \texttt{exec} family.
-When a state reaches the sink, the executor extracts the command argument, reads the concrete string from memory, and walks each byte's annotations to collect the set of contributing sources.
-
-\subsection{PoC Synthesis and NVRAM Chain Validation}
-\label{sec:proposed-poc}
-
-When execution reaches the sink with attacker-influenced bytes, Full-Reach synthesizes a proof-of-concept exploit.
-
-\paragraph{Canary validation.}
-For each tainted source, Full-Reach replaces the PathPlan value with a canary payload (\texttt{;echo PPCNRY}) and re-executes.
-If the canary string appears intact in the sink argument, the source is \emph{confirmed}: attacker input reaches \texttt{system()} unsanitized.
-If the canary is absent or truncated, the source is \emph{sanitized} along the path.
-This binary confirmation distinguishes true command injection from paths where the input is validated or escaped before reaching the sink.
-
-\paragraph{Multi-stage NVRAM chains.}
-Many firmware vulnerabilities involve NVRAM keys whose values are set by a different HTTP handler or binary.
-Full-Reach resolves these dependencies using an environment dictionary produced by \mango, which maps each NVRAM key to its SET and GET locations across all firmware binaries.
-For each tainted NVRAM key at the sink, the chain resolver walks backward through the environment dictionary, identifies the SET handler and its binary, and recurses if that handler has its own NVRAM dependencies.
-The result is a directed acyclic graph of NVRAM keys with a topological execution order.
-
-Each stage in the chain is independently validated by loading the appropriate binary, installing a special hook that treats \texttt{nvram\_set(target\_key, value)} as the sink, and confirming that attacker input flows through to the SET call.
-The final output is an ordered sequence of HTTP requests (or service invocations) with a Python script that executes them in sequence to trigger the vulnerability.
-
-\subsection{PostFix: Diagnose-Fix-Retry}
-\label{sec:proposed-postfix}
-
-When initial execution fails to reach the sink, the PostFix pipeline diagnoses the failure and attempts targeted fixes in multiple phases.
-
-The diagnosis function classifies failures into modes by analyzing execution diagnostics: loop stuck, state explosion, missing NVRAM value, missing HTTP parameter, handler not entered, scope too narrow, and others.
-For each mode, PostFix applies deterministic strategies that extend (never replace) the PathPlan: stubbing loop-stuck functions, injecting NVRAM values extracted from deadend constraints, adding undiscovered HTTP parameters, populating global memory flags.
-
-If deterministic fixes are exhausted, PostFix escalates to LLM retry.
-It constructs an execution feedback summary containing the termination reason, visited and missed trace functions, deadend locations, and observed inputs.
-This summary is appended to the handler analyzer's prompt for subsequent LLM invocations that incorporate prior execution outcomes.
-Each retry produces an extended PathPlan that is re-executed from scratch, with up to three total attempts (initial, deterministic fix, LLM retry with accumulated feedback).
-
-\section{Preliminary Results}
+\section{Preliminary Evidence}
 \label{sec:proposed-preliminary}
 
-A prototype implementation exists and has been evaluated on real firmware.
-On a NETGEAR R7000 firmware image (V1.0.12.216) containing 161 statically-reported closures across 33 binaries, the prototype confirms 51 reachable command injection paths with attacker-influenced data at the sink (31.7\%), identifies 50 closures with provably constant sink arguments (31.1\%), and produces concrete proof-of-concept exploits with canary validation for every confirmed path.
-
-LLM-directed planning recovers 19 closures (37.3\% of confirmed findings) that static precondition extraction alone cannot reach, at a total API cost of approximately \$4.20.
-Chain validation reveals that 80.4\% of confirmed vulnerabilities involve multi-stage NVRAM dependencies requiring ordered exploit sequences across multiple HTTP handlers.
-
-The prototype implements 103 provenance-preserving SimProcedure hooks across six firmware API families.
-Median execution time per closure is 20.4 seconds, with the full pipeline completing in approximately 25 minutes wall-clock time using 50 parallel workers.
-
-These results demonstrate the feasibility of the approach, but the evaluation is limited to a single firmware image from one vendor using the ACOS platform.
-The proposed work expands evaluation to additional firmware images, vendors, and vulnerability types as described below.
+A prototype has been evaluated on a NETGEAR R7000 firmware image containing 161 closures across 33 binaries.
+The prototype confirms 51 reachable command injection paths (31.7\%), identifies 50 closures with constant sink arguments (31.1\%), and produces concrete proof-of-concept exploits with canary validation for every confirmed path.
+Median execution time per closure is 20.4 seconds.
+These results demonstrate feasibility but are limited to a single firmware image from one vendor.
 
 \section{Planned Evaluation}
 \label{sec:proposed-evaluation}
 
-The following experiments will constitute the evaluation for the dissertation.
-
-\paragraph{Experiment 1: Multi-firmware effectiveness.}
-Run Full-Reach on closure sets from at least 3 additional firmware images spanning at least 2 vendors and 2 hardware architectures (ARM and MIPS).
-Report per-firmware breakdown of confirmed, constant, unreachable, and error verdicts.
-Compare against the R7000 baseline to assess generalization.
-The key metric is the confirmation rate: the fraction of statically-reported closures for which Full-Reach produces a definitive verdict (reachable or constant).
-
-\paragraph{Experiment 2: Comparison with existing validation approaches.}
-Compare Full-Reach's confirmation rate and false-positive elimination against three baselines: (1) angr's conventional VEX-based symbolic execution applied to the same closures, (2) FirmAE-based dynamic analysis with manual test case construction, and (3) Arbiter's static feasibility filtering.
-For each baseline, measure the number of closures confirmed, the number of false positives eliminated, and the time per closure.
-
-\paragraph{Experiment 3: LLM ablation and cost analysis.}
-Run Full-Reach in three configurations: full pipeline, static-only (no LLM), and LLM-only (no static extraction).
-For each configuration, report the number of closures reached, the PostFix recovery rate, and the total LLM API cost.
-This isolates the contribution of each precondition recovery tier and quantifies the cost-effectiveness of LLM integration.
-
-\paragraph{Experiment 4: End-to-end vulnerability confirmation.}
-For all confirmed closures across all evaluated firmware images, attempt to execute the generated PoC scripts against emulated firmware (using FirmAE or QEMU full-system emulation).
-Report the fraction of PoCs that trigger the vulnerability in the emulated environment.
-This experiment validates that the symbolic execution results correspond to real, exploitable vulnerabilities and not artifacts of the execution model.
-
-\paragraph{Experiment 5: Buffer overflow extension.}
-Extend Full-Reach's sink detection and PoC synthesis to cover buffer overflow vulnerabilities (\texttt{strcpy}, \texttt{strncpy}, \texttt{memcpy} to fixed-size buffers), which \mango already detects but the current prototype does not validate.
-Evaluate on the same firmware corpus and report confirmation rates for this vulnerability class.
-
-\section{Connection to the Dissertation Arc}
-\label{sec:proposed-connection}
-
-This proposed work completes the narrative arc introduced in Chapter~\ref{ch:mango}.
-The dissertation argues that the gap between automated vulnerability detection and confirmed exploitation can be closed through progressively stronger forms of validation evidence.
-
-\mango (Chapter~\ref{ch:mango}) provides \emph{partial validation}: Rich Expressions carry exploitability evidence (how the value was constructed, what transformations it survived), but cannot prove path feasibility.
-Artiphishell (Chapter~\ref{ch:artiphishell}) provides \emph{convergent validation}: when fuzzing, LLM scanning, and root-cause analysis independently agree that a code location is vulnerable, the convergent evidence is strong, but it remains empirical rather than formal.
-Full-Reach provides \emph{formal validation}: directed symbolic execution either produces a concrete triggering input (proof of reachability) or exhausts the path space (evidence of infeasibility), closing the gap completely.
-
-The technical connections are concrete.
-Full-Reach consumes \mango's closure output format directly: the function trace, call stack, sink specification, and vulnerability type feed into dispatch resolution and execution setup.
-\mango's environment dictionary, which maps NVRAM SET and GET locations across all firmware binaries, powers Full-Reach's multi-stage chain validation.
-The provenance annotations that Full-Reach attaches to symbolic bytes (recording which NVRAM key or HTTP parameter contributed to the sink argument) parallel the value-level reasoning that Rich Expressions perform during static analysis, now grounded in concrete execution semantics.
-
-The connection to Artiphishell is structural rather than data-flow.
-Artiphishell demonstrated that combining independent analysis techniques (static scanning, fuzzing, LLM reasoning) through a shared Analysis Graph produces stronger validation than any single technique.
-Full-Reach applies the same principle at a different scale: it combines static precondition extraction, LLM-directed planning, symbolic execution, and iterative retry through a shared PathPlan, each technique compensating for the others' blind spots.
-
-\section{Expected Contributions}
-\label{sec:proposed-contributions}
+The proposed evaluation will expand the prototype across multiple firmware images, vendors, and architectures to assess generalization.
+I plan to conduct the following experiments:
 
 \begin{enumerate}[nosep]
-  \item A directed symbolic execution framework for firmware vulnerability validation that consumes static analysis output and produces concrete proof-of-concept exploits, with provenance tracking that identifies every attacker-controlled source contributing to the sink argument.
-  \item A hybrid concretization policy that simultaneously enables deterministic branch resolution and provenance preservation through annotated concrete and symbolic bytes.
-  \item A multi-stage NVRAM chain validation technique that traces attacker influence across binary boundaries in firmware images.
-  \item An LLM-directed precondition recovery mechanism that infers runtime state from handler decompilation, with a PostFix retry pipeline that escalates from deterministic fixes to LLM-powered retries with accumulated execution feedback.
-  \item Empirical evaluation on multiple firmware images demonstrating end-to-end vulnerability confirmation rates and comparison against existing validation approaches.
+  \item \textbf{Multi-firmware effectiveness.} Evaluate on closure sets from additional firmware images spanning multiple vendors and architectures (ARM and MIPS). Report confirmation rates and compare against the R7000 baseline.
+  \item \textbf{Comparison with existing approaches.} Compare confirmation rate and false-positive elimination against angr's VEX-based symbolic execution and Arbiter's static feasibility filtering on the same closure sets.
+  \item \textbf{End-to-end exploit confirmation.} Execute generated PoC scripts against emulated firmware to validate that symbolic execution results correspond to exploitable vulnerabilities.
 \end{enumerate}
 
 \section{Timeline}
@@ -304,19 +64,14 @@ Full-Reach applies the same principle at a different scale: it combines static p
 \begin{center}
 \begin{tabular}{ll}
 \toprule
-\textbf{Period} & \textbf{Milestone} \\
+\textbf{Year} & \textbf{Milestone} \\
 \midrule
-Months 1--3 & Multi-firmware evaluation (Experiments 1 and 3) \\
-Months 4--6 & Baseline comparison and buffer overflow extension (Experiments 2 and 5) \\
-Months 7--9 & End-to-end PoC confirmation on emulated firmware (Experiment 4) \\
-Months 10--12 & Dissertation writing; paper submission \\
-Month 13+ & Defense \\
+2020 & Began Ph.D. at Arizona State University (SEFCOM) \\
+2022 & Passed comprehensive exam \\
+2024 & Published Operation Mango (USENIX Security 2024) \\
+2025 & Artiphishell at DEF CON (DARPA AIxCC); prospectus defense \\
+2025--2026 & Multi-firmware evaluation and baseline comparisons \\
+2026 & Paper submission; dissertation writing and defense \\
 \bottomrule
 \end{tabular}
 \end{center}
-
-\section{Plan for Defense}
-\label{sec:proposed-defense}
-
-The dissertation will contain three technical contributions forming a coherent progression along the validation evidence spectrum: scalable static detection with partial validation evidence (Operation Mango, USENIX Security 2024), autonomous multi-technique analysis with convergent validation (Artiphishell, DEF CON 2025), and directed symbolic execution with formal validation and concrete exploit synthesis (Full-Reach).
-The defense presentation will cover all three projects in approximately 45 minutes, followed by committee questioning.

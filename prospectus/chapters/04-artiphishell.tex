@@ -383,85 +383,8 @@ When a crash is found, the harness and seed is sent to \povguy.
 
 A large tenet of ARTIPHISHELL's bug-discovery pipeline is centered around grammar-based fuzzing. For ARTIPHISHELL we opted to build our tooling on top of the Nautilus-fuzzer. Nautilus supports two different grammar formats: a python representation and a JSON-based one. While the JSON-based format is more widely supported, e.g. by AFL++, atnwalk and others, we chose to build our tooling around the python representation of the grammar. The python format is advantageous in terms of the expressiveness of the grammars as well as the increased familiarity of Large Language Models with python.
 
-An example of both the JSON and a python grammar can be compared in Figure~\ref{fig:grammar-format-comparison}.
-
-\begin{figure}[h]
-\centering
-\textbf{Nautilus JSON Format}
-\begin{lstlisting}[language={},basicstyle=\footnotesize\ttfamily,frame=single]
-{ "rules": {
-    "START": [[{"NT": "HTML"}]],
-    "HTML": [
-      [ {"T": "<html>"},
-        {"NT": "HEAD"},
-        {"NT": "BODY"},
-        {"T": "</html>"}
-      ]],
-    "HEAD": [
-      [{"T": "<head>"},
-        {"NT": "TITLE"},
-        {"T": "</head>"}
-      ]],
-    "TITLE": [
-      [{"T": "<title>"},
-        {"NT": "TEXT"},
-        {"T": "</title>"}
-      ]],
-    "BODY": [
-      [{"T": "<body>"},
-        {"NT": "CONTENT"},
-        {"T": "</body>"}
-      ]],
-    "CONTENT": [
-      [{"NT": "PARAGRAPH"}],
-      [{"NT": "HEADING"}],
-      [{"NT": "PARAGRAPH"}, {"NT": "CONTENT"}]],
-    "HEADING": [
-      [{"T": "<h1>"},
-        {"NT": "TEXT"},
-        {"T": "</h1>"}
-      ]],
-    "PARAGRAPH": [
-      [{"T": "<p>"},
-        {"NT": "TEXT"},
-        {"T": "</p>"}
-      ]],
-    "TEXT": [
-      [{"T": "Hello World"}]
-    ]}}
-\end{lstlisting}
-
-\textbf{Nautilus Python Format}
-\begin{lstlisting}[language=Python,basicstyle=\footnotesize\ttfamily,frame=single]
-# Basic HTML Grammar
-ctx.rule("START", b"{HTML}")
-
-# HTML structure
-ctx.rule("HTML", b"<html>{HEAD}{BODY}</html>")
-
-# Head section
-ctx.rule("HEAD", b"<head>{TITLE}</head>")
-ctx.rule("TITLE", b"<title>{TEXT}</title>")
-
-# Body section
-ctx.rule("BODY", b"<body>{CONTENT}</body>")
-
-# Content alternatives
-ctx.rule("CONTENT", b"{PARAGRAPH}")
-ctx.rule("CONTENT", b"{HEADING}")
-ctx.rule("CONTENT", b"{PARAGRAPH}{CONTENT}")
-
-# Elements
-ctx.rule("HEADING", b"<h1>{TEXT}</h1>")
-ctx.rule("PARAGRAPH", b"<p>{TEXT}</p>")
-
-# Text content
-ctx.literal("TEXT", b"Hello World")
-\end{lstlisting}
-
-\caption{Side-by-side comparison of Nautilus supported JSON and Python format for grammar representation}
-\label{fig:grammar-format-comparison}
-\end{figure}
+An example of both the JSON and a python grammar can be compared in Figure~\ref{fig:grammar-format-comparison} (Appendix~\ref{app:artiphishell}).
+% Nautilus grammar format comparison figure moved to Appendix B
 
 First, the python representation supports the definition of arbitray ``producer''-functions in python. This allows the LLMs to both leverage their familiarity of writing python code as well as to bring to bear the full expressive power of the python standard library.
 This enables us to easily represent complex encodings, e.g., compression, base64, tar-archives and many more such common representations natively.
@@ -877,23 +800,23 @@ The goal of root cause analysis is to identify which functions need to be patche
 The \kumushi component combines several approaches to identify functions or groups of functions that are candidates for patching.
 
 \begin{description}
-\item[Stack Trace:] \kumushi extracts a configurable (yet small) number of functions from the stack trace associated with the crashing seed.
+\item[Stack Trace:] \kumushi{} extracts a configurable (yet small) number of functions from the stack trace associated with the crashing seed.
 This is a simple analysis that is motivated by the observation that in previous testing and qualification rounds, 60\% of the crushing functions were within five functions from the crashing site in the stack trace.
 \item[Git Diff:] This approach is used in delta mode only and simply extracts all the functions that are affected by modifications. This is motivated by the fact that a bug must be associated with newly introduced code.
-\item[Full Trace:] \kumushi creates a full execution trace for the crashing seed and collects all the functions that are invoked (up to 4,000).
+\item[Full Trace:] \kumushi{} creates a full execution trace for the crashing seed and collects all the functions that are invoked (up to 4,000).
 \item[Data Dependency Analysis:] This approach uses CodeQL to identify the variables mentioned in the line where the crash happened.
 Then, it performs additional data analysis queries to find all the functions that might have affected the values of these variables.
 \item[Fuzzing Invariants:] This approach is inspired by the crash analysis in Aurora~\cite{aurora}, and compares the stack traces for crashing seed with the stack traces of benign inputs to identify relevant functions.
-\item[Data From \diffguy:] When delta mode is selected, \kumushi retrieves the functions selected by the \diffguy agent, which are both new and likely to contain bugs (these functions are a subset of the functions returned by the Git Diff approach).
-\item[Data from \dyva:] \kumushi retrieves from \dyva the list of interesting functions associated with the crashing seed.
+\item[Data From \diffguy:] When delta mode is selected, \kumushi{} retrieves the functions selected by the \diffguy agent, which are both new and likely to contain bugs (these functions are a subset of the functions returned by the Git Diff approach).
+\item[Data from \dyva:] \kumushi{} retrieves from \dyva{} the list of interesting functions associated with the crashing seed.
 \end{description}
 
-Once the relevant functions are collected using the above-mentioned techniques, \kumushi creates a ranking of the functions based on the number of times they appear in the various lists produced by each approach and the weight associated with specific analysis techniques, which is determined manually based on experience and previous analysis rounds (both qualitative and quantitative information.)
+Once the relevant functions are collected using the above-mentioned techniques, \kumushi{} creates a ranking of the functions based on the number of times they appear in the various lists produced by each approach and the weight associated with specific analysis techniques, which is determined manually based on experience and previous analysis rounds (both qualitative and quantitative information.)
 
 Finally, an LLM-based component is used to select from the top 20 functions which group of two or more functions should be considered together in the patching process.
 This is necessary because some bugs, such as use-after-free vulnerabilities might involve multiple locations.
 
-The output of \kumushi is a list of function tuples that should be considered for patching.
+The output of \kumushi{} is a list of function tuples that should be considered for patching.
 
 \subsection{\dyva}
 Dyva is an LLM agent designed to identify the root cause of software vulnerabilities.
@@ -974,15 +897,15 @@ If the candidate patch successfully passes all validation passes mentioned above
 \paragraph{\patcherq}
 
 This represents our attempt to design a system that is orthogonal to \patchery, and therefore, can complement our patching strategy if/when \patchery cannot produce a patch.
-The key difference lies in their fundamental approaches to APR: while \patchery performs patching through a one-shot request with limited LLM-freedom, \patcherq takes the opposite stance by granting the LLM maximum freedom.
-This allows \patcherq to reason about the vulnerability, its root cause, and the corresponding patch, without adhering to predefined schemes such as ``patch one function at a time.''
-In a nutshell, \patcherq is composed by 2 main agents: the root-cause agent and the programmer agent.
+The key difference lies in their fundamental approaches to APR: while \patchery performs patching through a one-shot request with limited LLM-freedom, \patcherq{} takes the opposite stance by granting the LLM maximum freedom.
+This allows \patcherq{} to reason about the vulnerability, its root cause, and the corresponding patch, without adhering to predefined schemes such as ``patch one function at a time.''
+In a nutshell, \patcherq{} is composed by 2 main agents: the root-cause agent and the programmer agent.
 Both agents operate with a predefined set of tools for exploring the target repository.
 The root-cause agent is tasked with producing a root-cause report that describes, in natural language, the primary issue in the code, identifies the relevant files, and outlines how the code should be modified to address the vulnerability.
 On the other hand, the programmer agent uses this root-cause report to generate a patch for the program.
 Our current workflow involves multiple chains of thought: we first attempt to generate a root-cause report with one model and then use the programmer agent to produce a patch. If the patching attempt fails, we restart the process---re-performing root-cause analysis with a different model. Notably, if a \dyva report is available, it is always used as the initial root-cause report in the first attempt.
 
-To verify if a patch remediates the initial vulnerability, \patcherq employs a similar verification strategy as used by \patchery: \texttt{CompilerPass}, \texttt{BuildCheckPass}, \texttt{CrashPass}, \texttt{TestsPass}, \texttt{CriticPass},\texttt{RegressionPass}, and \texttt{FuzzPass}.
+To verify if a patch remediates the initial vulnerability, \patcherq{} employs a similar verification strategy as used by \patchery: \texttt{CompilerPass}, \texttt{BuildCheckPass}, \texttt{CrashPass}, \texttt{TestsPass}, \texttt{CriticPass}, \texttt{RegressionPass}, and \texttt{FuzzPass}.
 Notably, the only difference from \patchery in this workflow is the inclusion of a one-time LLM-based verification step, the \texttt{CriticPass}.
 This additional step was included based on the observation that in a few cases, the generated patches were easily circumvented (or too aggressive) despite careful prompt engineering of the agent.
 The \texttt{CriticPass} is executed by an LLM different from the one used to generate the patch (for our purposes, we employed \texttt{GPT-o3}), which does not have tool-calling capabilities.
@@ -1071,7 +994,7 @@ If a SARIF assessment is correct, its value is the following:
 value_{assessment} = 1 * (0.5 + RT/(2*SRT)).
 \end{equation}
 
-If multiple assessments are submitted for the same report, only the lastl be scored, and the previous ones will negatively affect the accuracy.
+If multiple assessments are submitted for the same report, only the last will be scored, and the previous ones will negatively affect the accuracy.
 
 The Bundle Score ($BDL$) represents the ability of the CRS to associate PoVs, patches, and SARIF reports.
 \begin{equation}
@@ -1113,14 +1036,43 @@ Most importantly, if a bundle has an incorrect pairing, its value is detracted f
 \label{competition}
 
 The \artiphishell CRS was submitted to DARPA on June 26, 2025.
-DARPA ran all the submitted systems on \numberoftargets targets.
+DARPA ran all the submitted systems on \numberoftargets tasks.
 
 The results were presented during DEF CON on August 10, 2025.
 
 \section{Discussion}
 \label{discussion}
 
-We had a blast doing this.
+Building and deploying \artiphishell as a fully autonomous CRS revealed several design principles and trade-offs that inform the broader goal of encoding practitioner knowledge into automated vulnerability discovery systems.
+
+\paragraph{The Analysis Graph as shared reasoning substrate.}
+The \analysisgraph emerged as the single most consequential architectural decision in \artiphishell.
+By centralizing call graphs, crash reports, proof of vulnerabilities, and patches in a shared data store, the system allowed independently developed agents to cross-reference one another's findings without explicit coordination logic.
+For example, \kumushi combines statistical stack-trace analysis with CodeQL-based data dependency queries and DyVA's root-cause reports, all retrieved from the same graph, to produce a ranked list of patchable functions.
+This convergent design mirrors how experienced security teams operate: different analysts apply independent techniques (fuzzing, code review, dynamic analysis) and share results through a common triage board.
+The \analysisgraph formalizes that triage board as a queryable data structure.
+
+\paragraph{Dual-patchers and complementary LLM roles.}
+\artiphishell's patching subsystem runs two fundamentally different repair strategies in parallel.
+\patchery constrains the LLM to a procedural code-generation role, feeding it pre-processed function clusters from \kumushi and iterating through a structured validation pipeline.
+\patcherq{} grants the LLM full reasoning authority, allowing it to independently investigate root causes and propose multi-function patches.
+Running both strategies simultaneously and validating their outputs through the same seven-step pipeline (\texttt{CompilerPass} through \texttt{FuzzPass}) captures the strengths of each approach without requiring the system to predict in advance which strategy will succeed.
+
+\paragraph{Validation depth as a design constraint.}
+The seven-step patch validation pipeline imposes significant computational cost per patch attempt, but the AIxCC scoring rules made this necessary.
+Because the Accuracy Multiplier penalizes incorrect submissions with a fourth-power decay, a single invalid patch can reduce the multiplier applied to all other scores.
+This scoring structure forced \artiphishell to prioritize validation depth over throughput.
+The \texttt{FuzzPass} step, which runs a short fuzzing campaign on each patched binary, proved particularly valuable: it caught several patches that suppressed the original crash but left the underlying vulnerability reachable through slightly different inputs.
+
+\paragraph{LLM-directed fuzzing and seed generation.}
+The combination of LLM-based vulnerability scanning (\lluminar, \discoveryguy) with traditional coverage-guided fuzzing (\afluzzer, \aijon) proved more effective than either approach alone.
+\lluminar's fine-tuned model rapidly identifies suspicious functions, providing high-value targets that \aijon instruments with IJON-style annotations to guide AFL++ toward specific code regions.
+\discoveryguy takes a given candidate sink function and uses \claudefour to trace reachable paths from harness entry points, then generates concrete crashing seeds.
+
+\paragraph{Grammar-based fuzzing at scale.}
+Generating project-specific grammars through LLMs allowed \artiphishell to drill and direct input in targets whose input formats would otherwise require weeks of manual grammar development.
+The \grammarguy agent analyzes target source code to produce Nautilus-compatible grammars, while \grammarroomba refines these grammars by removing rules that do not contribute to coverage gains.
+This automated grammar lifecycle allowed for fast iteration and produced reaching inputs that would otherrwise be infeasible to generate through other techniques in a similar timeframe.
 
 \section{Conclusions}
 \label{conclusions}
@@ -1129,14 +1081,4 @@ This paper presents \artiphishell, a Cyber Reasoning System developed by \shellp
 \artiphishell uses a novel agent-based architecture to identify vulnerabilities and provide patches in large, complex code bases, without requiring human assistance.
 By being completely autonomous, \artiphishell can operate at scale and continuously to increase the security of the software that supports the nation's critical infrastructure.
 
-\section{Services}
-
-The different components of \artiphishell{} rely on various services to operate.
-These services are initialized and dynamically configured once the required pre-processing stages have completed and the necessary artifacts are available.
-
-\subsection{Function Resolver}
-
-Locating the original source-code implementations of functions is a critical task for all components in \artiphishell{}.
-While this task appears rudimentary at first glance, real code-bases commonly include build-steps that complicate a direct mapping of compilation-artifact function representations back to the original code.
-
-Notable examples of this include auto-generated code (e.g., in parser-generators like Flex, YACC, etc.), build and link-time performance optimizations (e.g., SQLite's ``amalgamation'') and more.
+% Services and Function Resolver moved to Appendix A
