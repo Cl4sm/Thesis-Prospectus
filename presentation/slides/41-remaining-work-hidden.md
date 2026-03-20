@@ -1,6 +1,7 @@
 ---
 type: content
 title: "Remaining Work"
+hidden: True
 ---
 
 - Apr–May 2026: Multi-firmware expansion (TP-Link, D-Link, etc.)

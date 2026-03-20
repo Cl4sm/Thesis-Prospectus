@@ -169,14 +169,19 @@ def build(presentation_dir=None):
     # Load and parse all slide files (sorted by filename)
     slide_files = sorted(glob.glob(os.path.join(slides_dir, '*.md')))
     slides = []
-    for i, filepath in enumerate(slide_files):
+    hidden_count = 0
+    for filepath in slide_files:
         slide = parse_slide(filepath)
-        slide['_index'] = i + 1
+        # Skip slides with "hidden: true" in YAML frontmatter
+        if slide.get('hidden', False):
+            hidden_count += 1
+            continue
+        slide['_index'] = len(slides) + 1
         slide['_filename'] = os.path.basename(filepath)
         slide['_template'] = f"{slide.get('type', 'content')}.html.j2"
         slides.append(slide)
 
-    print(f"Loaded {len(slides)} slides")
+    print(f"Loaded {len(slides)} slides" + (f" ({hidden_count} hidden)" if hidden_count else ""))
 
     # Setup Jinja2
     env = Environment(loader=FileSystemLoader(templates_dir))

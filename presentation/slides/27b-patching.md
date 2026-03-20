@@ -3,70 +3,174 @@ type: content
 title: "Patch Generation & Verification"
 ---
 
-<svg viewBox="0 0 1000 280" style="width:100%; margin:0 auto; display:block;" xmlns="http://www.w3.org/2000/svg">
-  <!-- Flow containers -->
-  <rect x="20" y="100" width="140" height="80" fill="#f5f5f5" stroke="#333" stroke-width="2" rx="8"/>
-  <rect x="190" y="60" width="140" height="160" fill="#f5f5f5" stroke="#333" stroke-width="2" rx="8"/>
-  <rect x="370" y="100" width="140" height="80" fill="#f5f5f5" stroke="#333" stroke-width="2" rx="8"/>
-  <rect x="540" y="20" width="160" height="240" fill="#f5f5f5" stroke="#333" stroke-width="2" rx="8"/>
-  <rect x="750" y="100" width="140" height="80" fill="#f5f5f5" stroke="#333" stroke-width="2" rx="8"/>
-
-  <!-- Input: Root Cause Report -->
-  <text x="90" y="145" font-size="12" font-weight="bold" text-anchor="middle">Root Cause</text>
-  <text x="90" y="162" font-size="12" font-weight="bold" text-anchor="middle">Report</text>
-
-  <!-- ProgrammerLLM -->
-  <rect x="200" y="85" width="120" height="50" fill="#8C1D40" stroke="#5C0E1F" stroke-width="2" rx="4"/>
-  <text x="260" y="115" font-size="12" font-weight="bold" text-anchor="middle" fill="white">ProgrammerLLM</text>
-
-  <!-- Tool calls indicator -->
-  <circle cx="260" cy="130" r="4" fill="#FFD700"/>
-  <circle cx="252" cy="135" r="4" fill="#FFD700"/>
-  <circle cx="268" cy="135" r="4" fill="#FFD700"/>
-
-  <!-- Source Code (sub-component of ProgrammerLLM) -->
-  <rect x="205" y="155" width="110" height="35" fill="#f0e6e8" stroke="#8C1D40" stroke-width="1" rx="3"/>
-  <text x="260" y="176" font-size="10" text-anchor="middle">Source Files</text>
-
-  <!-- Candidate Patch -->
-  <text x="440" y="145" font-size="12" font-weight="bold" text-anchor="middle">Candidate</text>
-  <text x="440" y="162" font-size="12" font-weight="bold" text-anchor="middle">Patch</text>
-
-  <!-- Verification Loop -->
-  <rect x="555" y="50" width="130" height="50" fill="#f0e6e8" stroke="#8C1D40" stroke-width="1.5" rx="4"/>
-  <text x="620" y="80" font-size="11" text-anchor="middle">Compile Check</text>
-
-  <rect x="555" y="125" width="130" height="50" fill="#f0e6e8" stroke="#8C1D40" stroke-width="1.5" rx="4"/>
-  <text x="620" y="150" font-size="10" text-anchor="middle">PoV Regression</text>
-
-  <rect x="555" y="200" width="130" height="50" fill="#f0e6e8" stroke="#8C1D40" stroke-width="1.5" rx="4"/>
-  <text x="620" y="225" font-size="10" text-anchor="middle">Test Suite</text>
-
-  <!-- Output: Verified Patch -->
-  <text x="820" y="145" font-size="12" font-weight="bold" text-anchor="middle">Verified</text>
-  <text x="820" y="162" font-size="12" font-weight="bold" text-anchor="middle">Patch</text>
-
-  <!-- Arrows -->
+<svg viewBox="0 0 1100 480" style="width:100%; margin:0 auto; display:block;" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <marker id="arrowMaroon" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L0,6 L9,3 z" fill="#8C1D40"/>
+    <marker id="p-arr" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#666"/>
     </marker>
-    <marker id="arrowLoop" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L0,6 L9,3 z" fill="#D32F2F"/>
+    <marker id="p-arr-maroon" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#8C1D40"/>
     </marker>
+    <marker id="p-arr-red" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 9 3, 0 6" fill="#D32F2F"/>
+    </marker>
+    <filter id="p-shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.08"/>
+    </filter>
   </defs>
 
-  <!-- Main flow -->
-  <line x1="160" y1="140" x2="200" y2="110" stroke="#8C1D40" stroke-width="2.5" marker-end="url(#arrowMaroon)"/>
-  <line x1="320" y1="110" x2="370" y2="140" stroke="#8C1D40" stroke-width="2.5" marker-end="url(#arrowMaroon)"/>
-  <line x1="510" y1="140" x2="540" y2="140" stroke="#8C1D40" stroke-width="2.5" marker-end="url(#arrowMaroon)"/>
-  <line x1="700" y1="140" x2="750" y2="140" stroke="#8C1D40" stroke-width="2.5" marker-end="url(#arrowMaroon)"/>
+  <!-- ===== INPUT: Root Cause Analysis ===== -->
+  <rect x="15" y="130" width="130" height="100" rx="8" fill="#f5f5f5" stroke="#666" stroke-width="1.5" filter="url(#p-shadow)"/>
+  <text x="80" y="160" font-size="11" font-weight="700" text-anchor="middle" fill="#333" font-family="Inter, sans-serif">Root Cause</text>
+  <text x="80" y="178" font-size="10" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Kumushi (statistical)</text>
+  <text x="80" y="193" font-size="10" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">DyVA (LLM agent)</text>
+  <text x="80" y="208" font-size="10" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">SARIF triage</text>
 
-  <!-- Feedback loop from verification to ProgrammerLLM -->
-  <path d="M 555,165 Q 390,250 260,160" stroke="#D32F2F" stroke-width="2" fill="none" stroke-dasharray="5,5" marker-end="url(#arrowLoop)"/>
-  <text x="380" y="265" font-size="10" fill="#D32F2F">Critic Feedback</text>
+  <!-- ===== SPLIT ARROWS to two patchers ===== -->
+  <line x1="145" y1="160" x2="195" y2="90" stroke="#666" stroke-width="2" marker-end="url(#p-arr)"/>
+  <line x1="145" y1="200" x2="195" y2="280" stroke="#666" stroke-width="2" marker-end="url(#p-arr)"/>
+
+  <!-- ===== PATCHER Y (top) ===== -->
+  <rect x="200" y="15" width="300" height="155" rx="10" fill="#fafafa" stroke="#FF9800" stroke-width="2" filter="url(#p-shadow)"/>
+  <rect x="200" y="15" width="300" height="35" rx="10" fill="#fff3e0"/>
+  <rect x="200" y="42" width="300" height="8" fill="#fff3e0"/>
+  <text x="350" y="39" font-size="13" font-weight="700" text-anchor="middle" fill="#E65100" font-family="Inter, sans-serif">PatcherY — Constrained</text>
+
+  <!-- Kumushi clusters -->
+  <rect x="215" y="60" width="120" height="50" rx="4" fill="#fff" stroke="#FF9800" stroke-width="1.5"/>
+  <text x="275" y="78" font-size="10" font-weight="600" text-anchor="middle" fill="#E65100" font-family="Inter, sans-serif">Kumushi Clusters</text>
+  <text x="275" y="93" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">One function at a time</text>
+  <text x="275" y="105" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Scoped edit region</text>
+
+  <!-- Arrow -->
+  <line x1="335" y1="85" x2="355" y2="85" stroke="#666" stroke-width="1.5" marker-end="url(#p-arr)"/>
+
+  <!-- Claude LLM box -->
+  <rect x="360" y="60" width="120" height="50" rx="4" fill="#fff3e0" stroke="#FF9800" stroke-width="1.5"/>
+  <text x="420" y="78" font-size="10" font-weight="600" text-anchor="middle" fill="#E65100" font-family="Inter, sans-serif">Claude 3.7 Sonnet</text>
+  <text x="420" y="93" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Code-only generation</text>
+  <text x="420" y="105" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">No root cause analysis</text>
+
+  <!-- Retry loop arrow (PatcherY) -->
+  <path d="M 420,110 Q 420,140 340,140 Q 260,140 260,115" stroke="#D32F2F" stroke-width="1.5" fill="none" stroke-dasharray="4,3" marker-end="url(#p-arr-red)"/>
+  <text x="340" y="155" font-size="9" font-weight="600" fill="#D32F2F" text-anchor="middle" font-family="Inter, sans-serif">Iterative refinement (max 10)</text>
+
+  <!-- ===== PATCHER Q (bottom) ===== -->
+  <rect x="200" y="210" width="300" height="195" rx="10" fill="#fafafa" stroke="#9C27B0" stroke-width="2" filter="url(#p-shadow)"/>
+  <rect x="200" y="210" width="300" height="35" rx="10" fill="#f3e5f5"/>
+  <rect x="200" y="237" width="300" height="8" fill="#f3e5f5"/>
+  <text x="350" y="234" font-size="13" font-weight="700" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">PatcherQ — Free-Form</text>
+
+  <!-- Root Cause Agent -->
+  <rect x="215" y="255" width="120" height="55" rx="4" fill="#fff" stroke="#9C27B0" stroke-width="1.5"/>
+  <text x="275" y="273" font-size="10" font-weight="600" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">Root Cause Agent</text>
+  <text x="275" y="288" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Multiple chains of</text>
+  <text x="275" y="300" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">thought (diverse models)</text>
+
+  <!-- Arrow -->
+  <line x1="335" y1="282" x2="355" y2="282" stroke="#666" stroke-width="1.5" marker-end="url(#p-arr)"/>
+
+  <!-- Programmer Agent -->
+  <rect x="360" y="255" width="120" height="55" rx="4" fill="#f3e5f5" stroke="#9C27B0" stroke-width="1.5"/>
+  <text x="420" y="273" font-size="10" font-weight="600" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">Programmer Agent</text>
+  <text x="420" y="288" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Tool access: source</text>
+  <text x="420" y="300" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">search, file browse</text>
+
+  <!-- CriticPass (PatcherQ only) -->
+  <rect x="280" y="325" width="180" height="35" rx="4" fill="#fff" stroke="#9C27B0" stroke-width="1.5"/>
+  <text x="370" y="340" font-size="10" font-weight="600" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">CriticPass</text>
+  <text x="370" y="353" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">GPT-o3 review (no tool-calling)</text>
+
+  <!-- Feedback loop (PatcherQ) -->
+  <path d="M 420,310 Q 440,340 460,340 Q 480,340 480,370 Q 480,395 340,395 Q 215,395 215,315" stroke="#D32F2F" stroke-width="1.5" fill="none" stroke-dasharray="4,3" marker-end="url(#p-arr-red)"/>
+  <text x="350" y="395" font-size="9" font-weight="600" fill="#D32F2F" text-anchor="middle" font-family="Inter, sans-serif">Feedback loop</text>
+
+  <!-- ===== MERGE ARROWS to Validator ===== -->
+  <line x1="500" y1="90" x2="560" y2="180" stroke="#666" stroke-width="2" marker-end="url(#p-arr)"/>
+  <line x1="500" y1="310" x2="560" y2="220" stroke="#666" stroke-width="2" marker-end="url(#p-arr)"/>
+
+  <!-- ===== SHARED VALIDATOR ===== -->
+  <rect x="565" y="100" width="220" height="260" rx="10" fill="#fafafa" stroke="#8C1D40" stroke-width="2.5" filter="url(#p-shadow)"/>
+  <rect x="565" y="100" width="220" height="35" rx="10" fill="#F8EEF1"/>
+  <rect x="565" y="127" width="220" height="8" fill="#F8EEF1"/>
+  <text x="675" y="124" font-size="13" font-weight="700" text-anchor="middle" fill="#8C1D40" font-family="Inter, sans-serif">7-Step Validator</text>
+
+  <!-- Validation steps -->
+  <rect x="585" y="148" width="180" height="24" rx="3" fill="#fff" stroke="#ddd" stroke-width="1"/>
+  <text x="590" y="164" font-size="9" fill="#333" font-family="Inter, sans-serif">1</text>
+  <text x="610" y="164" font-size="10" fill="#333" font-family="Inter, sans-serif">CompilerPass</text>
+
+  <rect x="585" y="178" width="180" height="24" rx="3" fill="#fff" stroke="#ddd" stroke-width="1"/>
+  <text x="590" y="194" font-size="9" fill="#333" font-family="Inter, sans-serif">2</text>
+  <text x="610" y="194" font-size="10" fill="#333" font-family="Inter, sans-serif">BuildCheckPass</text>
+
+  <rect x="585" y="208" width="180" height="24" rx="3" fill="#fff" stroke="#ddd" stroke-width="1"/>
+  <text x="590" y="224" font-size="9" fill="#333" font-family="Inter, sans-serif">3</text>
+  <text x="610" y="224" font-size="10" fill="#333" font-family="Inter, sans-serif">CrashPass (PoV regression)</text>
+
+  <rect x="585" y="238" width="180" height="24" rx="3" fill="#fff" stroke="#ddd" stroke-width="1"/>
+  <text x="590" y="254" font-size="9" fill="#333" font-family="Inter, sans-serif">4</text>
+  <text x="610" y="254" font-size="10" fill="#333" font-family="Inter, sans-serif">TestsPass</text>
+
+  <rect x="585" y="268" width="180" height="24" rx="3" fill="#fff" stroke="#ddd" stroke-width="1"/>
+  <text x="590" y="284" font-size="9" fill="#333" font-family="Inter, sans-serif">5</text>
+  <text x="610" y="284" font-size="10" fill="#333" font-family="Inter, sans-serif">RegressionPass</text>
+
+  <rect x="585" y="298" width="180" height="24" rx="3" fill="#e8f5e9" stroke="#4CAF50" stroke-width="1"/>
+  <text x="590" y="314" font-size="9" fill="#333" font-family="Inter, sans-serif">6</text>
+  <text x="610" y="314" font-size="10" font-weight="600" fill="#2E7D32" font-family="Inter, sans-serif">FuzzPass (harness)</text>
+
+  <rect x="585" y="328" width="180" height="24" rx="3" fill="#fff" stroke="#ddd" stroke-width="1"/>
+  <text x="590" y="344" font-size="9" fill="#333" font-family="Inter, sans-serif">7</text>
+  <text x="610" y="344" font-size="10" fill="#333" font-family="Inter, sans-serif">SanitizersPass</text>
+
+  <!-- ===== ARROW to PatcherG ===== -->
+  <line x1="785" y1="230" x2="830" y2="230" stroke="#8C1D40" stroke-width="2.5" marker-end="url(#p-arr-maroon)"/>
+
+  <!-- ===== PATCHER G (dedup gate) ===== -->
+  <rect x="835" y="155" width="130" height="150" rx="10" fill="#fafafa" stroke="#4CAF50" stroke-width="2" filter="url(#p-shadow)"/>
+  <rect x="835" y="155" width="130" height="35" rx="10" fill="#e8f5e9"/>
+  <rect x="835" y="182" width="130" height="8" fill="#e8f5e9"/>
+  <text x="900" y="178" font-size="12" font-weight="700" text-anchor="middle" fill="#2E7D32" font-family="Inter, sans-serif">PatcherG</text>
+
+  <!-- Gate icon -->
+  <rect x="870" y="205" width="60" height="40" rx="4" fill="#fff" stroke="#4CAF50" stroke-width="1.5"/>
+  <text x="900" y="222" font-size="10" font-weight="600" text-anchor="middle" fill="#2E7D32" font-family="Inter, sans-serif">Dedup</text>
+  <text x="900" y="236" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Gate</text>
+
+  <text x="900" y="270" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">One patch per bug</text>
+  <text x="900" y="284" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">First valid wins</text>
+
+  <!-- ===== OUTPUT arrow ===== -->
+  <line x1="965" y1="230" x2="1010" y2="230" stroke="#8C1D40" stroke-width="2.5" marker-end="url(#p-arr-maroon)"/>
+
+  <!-- Submitted Patch -->
+  <rect x="1015" y="200" width="70" height="60" rx="6" fill="#8C1D40" filter="url(#p-shadow)"/>
+  <text x="1050" y="228" font-size="10" font-weight="700" text-anchor="middle" fill="#FFD700" font-family="Inter, sans-serif">Submitted</text>
+  <text x="1050" y="244" font-size="10" font-weight="700" text-anchor="middle" fill="#FFD700" font-family="Inter, sans-serif">Patch</text>
+
+  <!-- ===== BOTTOM: Key stats ===== -->
+  <line x1="50" y1="430" x2="1060" y2="430" stroke="#e0e0e0" stroke-width="1"/>
+
+  <rect x="100" y="445" width="250" height="28" rx="4" fill="#fff3e0"/>
+  <text x="225" y="464" font-size="11" font-weight="600" text-anchor="middle" fill="#E65100" font-family="Inter, sans-serif">PatcherY: fast, scoped, deterministic</text>
+
+  <rect x="420" y="445" width="250" height="28" rx="4" fill="#f3e5f5"/>
+  <text x="545" y="464" font-size="11" font-weight="600" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">PatcherQ: creative, multi-model, agentic</text>
+
+  <rect x="740" y="445" width="250" height="28" rx="4" fill="#e8f5e9"/>
+  <text x="865" y="464" font-size="11" font-weight="600" text-anchor="middle" fill="#2E7D32" font-family="Inter, sans-serif">Race condition: best patch wins</text>
+
 </svg>
 
 ???
 
-Patching is where everything comes together. The ProgrammerLLM receives the root cause report from DyVA and generates a candidate fix. It has tool access: it can read source files, check related code, and examine the vulnerability context before writing the patch. Each candidate goes through a three-stage verification loop. First, compilation. If the patch introduces syntax errors or type mismatches, it fails immediately. Second, PoV regression. The original crashing input must no longer trigger the vulnerability. Third, the full test suite. The patch must preserve existing functionality. If any check fails, a critic LLM analyzes the failure and provides feedback. The ProgrammerLLM uses that feedback to refine the patch. This loop continues until verification passes. Across the competition, Artiphishell achieved 95% or higher patch accuracy, the highest among all seven finalist CRS teams.
+Patching is where everything comes together. Artiphishell runs two patchers in parallel, each with a fundamentally different strategy.
+
+PatcherY is the constrained patcher. It receives function clusters from Kumushi, our statistical root cause analysis system, and patches one function at a time. The LLM, Claude 3.7 Sonnet, only generates code. It does not perform root cause analysis; that was already done upstream. If the patch fails validation, PatcherY refines iteratively, up to ten attempts, staying within the same scoped edit region.
+
+PatcherQ is the free-form patcher. It uses a multi-agent architecture: a root cause agent generates hypotheses using multiple chains of thought across different models, then a programmer agent with full tool access, file browsing, source search, writes the patch. PatcherQ also runs a CriticPass using GPT-o3, which reviews the patch without tool access, providing an independent quality check.
+
+Both patchers feed into the same seven-step validation pipeline. CompilerPass checks syntax. BuildCheckPass verifies the full project builds. CrashPass confirms the original exploit no longer triggers. TestsPass runs the test suite. RegressionPass checks for side effects. FuzzPass runs the harness to search for new bugs introduced by the patch. SanitizersPass checks for memory safety violations.
+
+Finally, PatcherG acts as a deduplication gatekeeper. Only one patch per bug can be submitted. Whichever patcher produces a valid patch first wins. This race condition between a constrained and a creative approach maximized our coverage across different bug classes. Across the competition, Artiphishell achieved 95% or higher patch accuracy, the highest among all seven finalist CRS teams.
