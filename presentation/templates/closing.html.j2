@@ -1,0 +1,10 @@
+{# Closing slide #}
+<div class="slide flex flex-col items-center justify-center text-center px-12" id="slide-{{ slide._index }}">
+    <h2 class="text-5xl md:text-6xl font-bold text-gray-900 mb-4">{{ slide.title }}</h2>
+    {% if slide.subtitle %}
+    <p class="text-2xl md:text-3xl text-gray-500 mb-12">{{ slide.subtitle }}</p>
+    {% endif %}
+    <div class="slide-body text-lg text-gray-500">
+        {{ slide.body_html | safe }}
+    </div>
+</div>

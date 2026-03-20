@@ -1,0 +1,18 @@
+{# Cover / title slide — white top, maroon bottom band #}
+<div class="slide flex flex-col" id="slide-{{ slide._index }}">
+    {# Main content area — centered in upper portion #}
+    <div class="flex-1 flex flex-col items-center justify-center text-center px-12 pb-4">
+        <div class="slide-body cover-body">
+            {{ slide.body_html | safe }}
+        </div>
+    </div>
+    {# Maroon bottom band #}
+    <div class="bg-maroon text-white px-12 py-5 flex items-center justify-between shrink-0">
+        <div class="text-base md:text-lg opacity-90">
+            Arizona State University · SEFCOM
+        </div>
+        <div class="text-base md:text-lg opacity-90">
+            March 2026
+        </div>
+    </div>
+</div>

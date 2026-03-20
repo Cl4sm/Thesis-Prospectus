@@ -8,7 +8,7 @@ Since its creation, the internet has grown into a critical piece of global infra
 unprecedented communication, commerce, and innovation, connecting over 29 billion devices worldwide~\cite{cisco2020air}.
 This growth has been accompanied by a parallel rise in cyber crime, with global damages estimated at \$10.5 trillion annually by
 2025~\cite{cybersecventures2025}.
-Software vulnerabilities are a primary enabler of this damage: they provide the footholds through which attackers breach systems,
+Software vulnerabilities are a primary enabler of this damage, providing footholds through which attackers breach systems,
 escalate privileges, and exfiltrate data.
 The National Vulnerability Database recorded over 40,000 new CVEs in 2024 alone, a 38\% increase over the prior year~\cite{nvd2024stats},
 and this count only reflects vulnerabilities that have been publicly reported.
@@ -25,7 +25,7 @@ Fuzzers produce crashes that may not be security-relevant.
 Symbolic execution engines often cannot scale to whole programs.
 Each technique, in isolation, yields partial evidence.
 
-Vulnerability researchers generate evidence of vulnerabilities not through any single technique, but through a combination of approaches.
+Vulnerability researchers generate evidence of vulnerabilities not through any single technique, but through a combination of approaches~\cite{votipka2018hackers}.
 When an analyst examines a static analysis report, they do not simply check whether a data flow
 exists from source to sink; they evaluate what happened to the value along the way, whether
 the path is reachable under realistic conditions, and how findings from one technique corroborate
@@ -48,20 +48,16 @@ Manual auditing cannot keep pace with this volume: the global cybersecurity work
 
 The dominant automated approach to finding taint-style vulnerabilities in firmware (such as command injection and buffer overflows) is to trace data
 flows from attacker-controlled sources to dangerous sinks.
-Tools like Karonte~\cite{redini2020karonte}, SaTC~\cite{chen2021satc}, DTaint~\cite{cheng2018dtaint}, and Saluki~\cite{gotovchits2018saluki} all
+Tools like Karonte~\cite{karonte}, SaTC~\cite{SaTC}, DTaint~\cite{cheng2018dtaint}, and Saluki~\cite{gotovchits2018saluki} all
 adopt this approach.
 The central limitation of this approach is that taint tracking loses information of how values reach the sink, intact or not.
 When an analyst traces a value from a network input to a sink, they reason about what happened to that value along the way.
-Integer conversion, truncation, or sanitization are just a few of the factors analysts use to judge when determining if a path is exploitable.
-Conventional binary taint tracking does not encode these judgments.
-Tools that track only tainted bits produce false positives: they flag paths where the value has been sanitized beyond exploitation \(over tainting\).
-Studies of static analysis adoption have repeatedly identified false positives as the primary barrier to practical
-use~\cite{johnson2013staticanalysis}.
+Integer conversion, truncation, or sanitization are just a few of the factors that can cause a path to be unexploitable.
+Tools that track only tainted values without encoding the full transformation history produce false positives, flagging paths where the value has been sanitized beyond exploitation \(over tainting\).
 Existing tools for firmware static analysis attempt to reduce false positives by restricting their analysis scope to achieve tractable running times, analyzing only ``border binaries'' that appear to handle
-network input~\cite{chen2021satc, redini2020karonte}.
-This filtering discards the majority of the firmware.
-On the same dataset, Karonte and SaTC analyze a maximum of 131 of 3,599 binaries.
-Vulnerabilities in the remaining binaries go unexamined.
+network input~\cite{SaTC, karonte}.
+However, this filtering discards the majority of the firmware.
+On the same dataset, Karonte and SaTC analyze a maximum of 131 of 3,599 binaries, leaving vulnerabilities in the remaining binaries unexamined.
 
 In Chapter~\ref{ch:mango}, I present Operation Mango~\cite{gibbs2024mango}, a static data-flow analysis engine that encodes value-level reasoning into
 firmware vulnerability discovery.
@@ -77,7 +73,7 @@ vulnerabilities in a sampled audit.
 Confirming that a vulnerability is real requires more than any single analysis technique can provide.
 Fuzzers produce crashes that need diagnosis.
 A segmentation fault does not, by itself, reveal the root cause, the vulnerable input field, or whether
-the bug is security-relevant.
+a bug is security-relevant.
 Static analyzers flag suspicious patterns without execution context, and studies of their adoption consistently identify false positives as the primary
 barrier to practical use~\cite{johnson2013staticanalysis}.
 LLM-based scanners identify code that resembles known vulnerability classes but cannot verify their findings dynamically~\cite{thapa2022vuldeepecker}.
@@ -89,23 +85,21 @@ Analysts do not run a single tool and accept its verdict.
 They fuzz a target, scan its source code, review crash reports, and cross-reference findings across all three.
 When a fuzzer crashes on a function that a static analyzer also flagged, and manual review confirms the root cause, the analyst has built a case through
 convergent evidence that no single technique could produce.
-This multi-technique coordination, the understanding of how to sequence independent analyses so that their findings reinforce one another, is a form of
-practitioner knowledge that current automated systems discard.
-Each tool operates in its own silo, producing outputs that a human analyst must manually integrate, and the expertise required for that integration
-remains one of the scarcest resources in security~\cite{isc2workforce2024}.
+This multi-technique coordination, the understanding of how to sequence independent analyses so that their findings reinforce one another, is
+difficult to encode in an automated system without human intervention.
 
 DARPA's Cyber Grand Challenge (CGC)~\cite{darpa2016cgc} in 2016 produced the first generation of autonomous Cyber Reasoning Systems (CRS) that
 attempted to replace human integration.
 Systems such as Mechanical Phish~\cite{shoshitaishvili2018mechanical} and Mayhem~\cite{cha2012mayhem} demonstrated that autonomous
 vulnerability discovery, exploitation, and patching were possible, but only under the constraints of a purpose built operating system (DECREE)
 with simplified binaries, input formats, and no library dependencies.
-DARPA's AI Cyber Challenge (AIxCC)~\cite{darpa2025aixcc}, a \$29.5 million competition launched in 2024, challenged
+DARPA's AI Cyber Challenge (AIxCC)~\cite{aixcc}, a \$29.5 million competition launched in 2024, challenged
 this limitation by targeting real-world open-source software: the Linux kernel, SQLite, Jenkins, and similar projects whose scale, language diversity,
 and input complexity exceeded what any single technique could handle alone.
 AIxCC required systems that find, validate, and patch vulnerabilities with zero human intervention, forcing teams to encode the multi-technique workflow
 knowledge that human security teams apply naturally.
 
-In Chapter~\ref{ch:artiphishell}, I present Artiphishell, a fully autonomous CRS designed and led by team Shellphish for AIxCC.
+In Chapter~\ref{ch:artiphishell}, I present Artiphishell, a fully autonomous CRS designed and led by team Shellphish for the AI Cyber Challenge.
 Artiphishell encodes multi-technique workflow knowledge by coordinating coverage-guided fuzzing, grammar-based fuzzing, LLM-powered vulnerability
 scanning, statistical and LLM-based root-cause analysis, and AI-driven patching through a multi-agent pipeline.
 All agents share state through the Analysis Graph, a central knowledge base that enables the same cross-referencing that human teams perform.
@@ -113,18 +107,18 @@ The system builds convergent evidence for a vulnerability, for example: a fuzzer
 localizes the bug, and a patch is generated which passes the validation pipeline without introducing regressions. 
 
 
-\section{Closing the Loop: Symbolic Execution for Path Feasibility}
+\section{Symbolic Execution for Path Feasibility in Firmware}
 
 Scalable static analyzers for firmware, including \toolname, \satc, \karonte, etc. produce vulnerability candidates, but they cannot prove that any individual candidate is
-reachable under conditions that trigger the bug.
-The data flow may exist, and the value at the sink may appear exploitable, yet the specific sequence of branches required to reach that sink
-could be unsatisfiable given the program's actual constraints.
+reachable under conditions that trigger a bug.
+The data flow may exist, and the value at the sink may appear exploitable, but the specific sequence of branches required to reach that sink
+can be unsatisfiable given the program's actual constraints.
 In firmware, this problem is compounded by cross-binary communication: a value may pass through NVRAM, shared memory, or a socket between processes,
 and the analyst must reason about feasibility across multiple binaries with limited visibility into each one.
 A human analyst carefully traces control flow, evaluates branch conditions, and judges whether a concrete input could drive the program along the flagged path.
-This path feasibility reasoning by humans is expensive, time-consuming, and requires domain expertise.
+This path feasibility reasoning by humans is expensive, time-consuming, and requires domain expertise~\cite{votipka2019observational}.
 
-Symbolic execution~\cite{king1976symbolic} automates this path-based reasoning by treating program inputs as symbolic variables and collecting path constraints that,
+Symbolic execution~\cite{king1976symbolic} automates path-based reasoning by treating program inputs as symbolic variables and collecting path constraints that,
 when solved, produce concrete triggering inputs.
 However, path explosions~\cite{krishnamoorthy2010tackling} make full-program symbolic execution intractable for anything beyond a toy program.
 Deeply nested loops, indirect calls through function tables, and library code that the analysis must model or explore significantly hinders progress.

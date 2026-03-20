@@ -6,68 +6,27 @@
 \chapter{Proposed Work: Automated Validation of Static Vulnerability Candidates Through Directed Symbolic Execution}
 \label{ch:proposed}
 
-\section{Introduction}
-\label{sec:proposed-intro}
-
-Static analysis techniques for finding taint-style vulnerabilities in firmware have reached a point where tools can process entire firmware images containing hundreds of binaries.
-\mango (Chapter~\ref{ch:mango}) analyzes every binary in a firmware image, producing ranked vulnerability candidates annotated with Rich Expressions that encode the full transformation history from attacker-controlled source to vulnerability sink.
-On the \karonte dataset alone, \mango generates over 2,000 candidates across 49 firmware images.
-
-The gap between a flagged data flow and a confirmed vulnerability, however, remains wide.
-\rda tracks value compositions and data dependencies across functions, but its abstract domain over-approximates program behavior.
-Due to its static nature, it cannot determine whether the conditional guards along a reported path are satisfiable under any concrete input.
-A Rich Expression showing attacker input flowing into \texttt{system()} may, in practice, be blocked by an NVRAM flag check, a string comparison against a hardcoded whitelist, or a cross-binary precondition that static analysis cannot resolve.
-Without concrete triggering inputs, every candidate remains a hypothesis.
-Vendors routinely reject vulnerability reports that lack proof-of-concept exploits~[CITE], and manual triage at the scale \mango operates is infeasible.
-
-Symbolic execution~\cite{king1976symbolic} is the natural complement to static analysis for this validation task, as it can produce concrete inputs satisfying path constraints or prove those paths infeasible.
-Prior work has applied symbolic execution to binary vulnerability discovery~[CITE], crash reproduction~[CITE], and exploit generation~[CITE].
-These systems demonstrate the power of constraint solving for turning static findings into actionable results.
-Applying symbolic execution to firmware binaries, though, introduces challenges that existing tools handle poorly.
-
-First, path explosion~\cite{krishnamoorthy2010tackling} renders whole-program symbolic execution intractable for firmware services, which contain deeply nested loops, complex library interactions, and hundreds of functions per binary.
-Second, firmware binaries depend on environmental state (NVRAM variables, configuration files, proprietary HTTP APIs, cross-binary IPC) that generic symbolic executors cannot model without manual annotation~[CITE].
-Third, most binary-level symbolic executors operate on low-level intermediate representations such as VEX~[CITE] that produce verbose constraints, compounding solver overhead and generating infeasible paths from artifacts of the lifting process rather than from genuine program semantics.
-
-Directed symbolic execution~[CITE] partially addresses path explosion by steering exploration toward specific program locations rather than enumerating all paths exhaustively.
-Systems such as KATCH~[CITE], BugRedux~[CITE], and Arbiter~[CITE] target known code locations or crash sites.
-These systems, however, are geared towards user-land applications and still face the entry-point problem.
-They must determine where to begin execution and what environmental preconditions to satisfy, both of which remain open challenges for stripped firmware binaries with no source code or debug symbols.
-
-Static analysis systems capable of identifying source-to-sink paths already solve the expensive sub-problem of determining which paths to examine.
-A symbolic executor that replays only these paths collapses the validation problem from open-ended exploration into bounded trace verification, shrinking the search space from the entire binary to a single statically identified path.
-
-I propose a directed symbolic execution system built around a canonical trace representation that any taint-style static analysis can target.
-The system accepts traces from an upstream static analysis tool, normalizes them into a common format encoding the function-level path from source to sink, and produces for each trace a verdict (reachable, unreachable, or constant sink) along with concrete proof-of-concept inputs for confirmed paths.
-\mango closures serve as the primary instantiation of this interface, but the architecture is not coupled to \mango's internals; any tool that emits a function-call-chain from source to sink can feed the executor.
-The system operates on angr's AIL (angr Intermediate Language), a decompiler-level IR that carries recovered type information and structured control flow, producing tighter constraints and fewer lifting artifacts than VEX-based execution.
-To handle the environmental preconditions that block firmware paths, the system combines static precondition extraction (identifying NVRAM keys, HTTP parameters, and guard patterns from decompilation) with LLM-directed precondition recovery for cases where static extraction is insufficient.
-For vulnerabilities spanning multiple binaries through shared NVRAM state, the system traces SET and GET locations across the firmware image, constructing multi-stage constraint chains that model the full cross-binary data flow.
-Additionally, stubborn path constraints are recovered via LLM-directed inference on the decompiled code, which can fill in gaps in the static analysis and guide the executor through complex guard conditions as well as fully stub out functions with difficult to traverse functionality for the symbolic execution.
-
-\section{Approach}
+\section{Problem and Approach}
 \label{sec:proposed-approach}
 
-The proposed system accepts a firmware binary and a set of traces from an upstream static analysis tool.
-Each trace encodes a function-level path from an attacker-controlled source to a vulnerability-relevant sink.
-The system normalizes these traces into a canonical representation, then performs directed symbolic execution along each path, avoiding the exhaustive exploration that makes conventional symbolic execution intractable.
-For each trace, the system produces a verdict (reachable, unreachable, or constant sink) and, when reachable, a concrete proof-of-concept input.
-In the current prototype, \mango closures serve as the trace source, but the normalization layer is designed so that any taint-style static analysis producing source-to-sink call chains can feed the executor.
+Static analysis tools such as \mango (Chapter~\ref{ch:mango}) produce large numbers of vulnerability candidates across a firmware image, but every candidate remains a hypothesis with no validation.
+Necessarily, these approaches approximate program behavior which may result in false positives: attacker input flowing into \texttt{system()} may be blocked by an NVRAM flag check, a string comparison against a hardcoded whitelist, or a cross-binary precondition that static analysis cannot resolve.
+Vendors routinely reject reports that lack proof-of-concept exploits~\cite{gibbs2024mango}, and manual triaging multiple firmware is infeasible.
 
-The approach operates on angr's AIL (angr Intermediate Language), a higher-level IR that carries recovered type information and structured control flow from decompilation.
-Operating at this level produces tighter constraints and fewer infeasible paths than VEX-based execution.
-To handle firmware-specific guards, the system combines static precondition extraction (identifying NVRAM keys, HTTP parameters, and guard patterns from the decompilation) with LLM-directed precondition recovery for cases where static extraction is insufficient.
-A hybrid concretization policy allows guard checks to resolve deterministically while preserving provenance annotations that track which attacker-controlled sources influence the sink argument.
+Symbolic execution~\cite{king1976symbolic} can close this gap by producing concrete triggering inputs or proving path feasibility.
+Whole-program symbolic execution, however, is intractable for firmware services due to path explosion~\cite{krishnamoorthy2010tackling}, unmodeled environmental state (NVRAM, HTTP APIs, cross-binary IPC)~\cite{greenhouse}, and the verbose constraints produced by low-level IRs such as VEX~\cite{nethercote2007valgrind}.
+Directed approaches~\cite{ma2011directed,vadayath2022arbiter} reduce explosion by targeting specific locations, but still face the entry-point problem of complex environmental preconditions that must be satisfied when analyzing firmware.
 
-For vulnerabilities that span multiple binaries through NVRAM, the system traces SET and GET locations across the firmware image (using environment dictionaries such as the one \mango constructs during its analysis), constructing multi-stage constraint chains that connect the setter binary's symbolic state to the getter binary's path conditions.
+Static analysis systems that identify source-to-sink paths already solve the expensive sub-problem of determining which paths to examine.
+I propose a directed symbolic execution system that consumes these paths and collapses the validation problem from open-ended exploration into bounded trace verification.
+The system accepts traces from an upstream static analysis tool, normalizes them into a canonical representation encoding the function-level path from source to sink, and produces for each trace a verdict (reachable, unreachable, or constant sink) along with concrete inputs for confirmed paths.
+The normalization layer accepts any taint-style analysis that produces source-to-sink call chains.
 
-\section{Preliminary Evidence}
-\label{sec:proposed-preliminary}
-
-A prototype has been evaluated on a NETGEAR R7000 firmware image containing 161 closures across 33 binaries.
-The prototype confirms 51 reachable command injection paths (31.7\%), identifies 50 closures with constant sink arguments (31.1\%), and produces concrete proof-of-concept exploits with canary validation for every confirmed path.
-Median execution time per closure is 20.4 seconds.
-These results demonstrate feasibility but are limited to a single firmware image from one vendor.
+Three design choices distinguish this system from conventional binary symbolic execution.
+First, execution operates on angr's AIL (angr Intermediate Language), a decompiler-level IR that carries recovered type information and structured control flow, producing tighter constraints and fewer lifting artifacts than VEX-based execution.
+Second, a hybrid concretization policy combines static precondition extraction (NVRAM keys, HTTP parameters, guard patterns from decompilation) with LLM-directed precondition recovery for cases where static extraction is insufficient.
+This policy allows guard checks to resolve deterministically while preserving provenance annotations that track which attacker-controlled sources influence the sink argument.
+Third, for vulnerabilities spanning multiple binaries through shared NVRAM state, the system traces SET and GET locations across the firmware image, constructing multi-stage constraint chains that connect the setter binary's symbolic state to the getter binary's path conditions.
 
 \section{Planned Evaluation}
 \label{sec:proposed-evaluation}
@@ -76,25 +35,7 @@ The proposed evaluation will expand the prototype across multiple firmware image
 I plan to conduct the following experiments:
 
 \begin{enumerate}[nosep]
-  \item \textbf{Multi-firmware effectiveness.} Evaluate on closure sets from additional firmware images spanning multiple vendors and architectures (ARM and MIPS). Report confirmation rates and compare against the R7000 baseline.
-  \item \textbf{Comparison with existing approaches.} Compare confirmation rate and false-positive elimination against angr's VEX-based symbolic execution and Arbiter's static feasibility filtering on the same closure sets.
-  \item \textbf{End-to-end exploit confirmation.} Execute generated PoC scripts against emulated firmware to validate that symbolic execution results correspond to exploitable vulnerabilities.
+  \item \textbf{Multi-firmware effectiveness.} Evaluate the system on firmware images spanning multiple vendors and architectures to show generalizability. This includes the reporting of 0-day vulnerabilities discovered through this process (of which we have identified one already).
+  \item \textbf{Static analysis verification.} Evaluate the system's effectiveness on multiple static analysis tools (e.g., \mango, \satc, \karonte, etc.) to demonstrate the normalization layer's generality and identify the gap between reported candidates and confirmed vulnerabilities.
+  \item \textbf{LLM-directed precondition recovery.} Evaluate the contribution of LLM-directed precondition recovery by comparing validation results with and without this component.
 \end{enumerate}
-
-\section{Timeline}
-\label{sec:proposed-timeline}
-
-\begin{center}
-\begin{tabular}{ll}
-\toprule
-\textbf{Year} & \textbf{Milestone} \\
-\midrule
-2020 & Began Ph.D. at Arizona State University (SEFCOM) \\
-2022 & Passed comprehensive exam \\
-2024 & Published Operation Mango (USENIX Security 2024) \\
-2025 & Artiphishell at DEF CON (DARPA AIxCC); prospectus defense \\
-2025--2026 & Multi-firmware evaluation and baseline comparisons \\
-2026 & Paper submission; dissertation writing and defense \\
-\bottomrule
-\end{tabular}
-\end{center}

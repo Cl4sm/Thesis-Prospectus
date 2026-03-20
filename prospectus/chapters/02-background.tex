@@ -1,0 +1,197 @@
+% ============================================================
+%  CHAPTER 2: BACKGROUND
+%  Content moved from the background sections of the
+%  Mango (USENIX Security '24) and Artiphishell (DEF CON '25) papers.
+% ============================================================
+\chapter{Background}
+\label{ch:background}
+
+
+% ============================================================
+%  From Operation Mango paper — Section 2
+% ============================================================
+
+\section{Operation Mango}
+\label{sec:bg-mango}
+
+\subsection{Firmware Types}
+\label{sec:bg-firmware-types}
+
+Qasem et al.~\cite{qasem2021automatic} categorized firmware into three types:
+Type~I, where there is a clear separation between the Operating System (OS) and the contained firmware services (in terms of files and processes), Type~II, where the OS and services are combined into a monolithic binary blob, and Type~III, where there is no OS but only logic embedded in a blob.
+
+Type~II and Type~III firmware are typically used to implement software for programmable logic controllers (PLCs) and real-time, low-power embedded devices (generally with less complicated logic).
+Type~I firmware is more commonly seen in feature-rich and complex IoT devices such as routers, webcams, or networked CCTVs, where the OS is usually embedded Linux and services are ELF binaries (of varying architectures).
+A 2014 study by Costin et al.~\cite{costin2014large} found that over 86\% of firmware samples in a large dataset of 32,356 images were Type~I firmware using embedded Linux as the OS.
+Similar to prior work~\cite{celik2018sensitive,mandal2020cross} in this area, our research focuses on finding taint-style vulnerabilities in the user-space services of Type~I firmware.
+
+
+\subsection{Motivating Example}
+\label{sec:motivating_example}
+
+\begin{code}
+    \caption{Decompiled code of the \texttt{httpd} and \texttt{dlnad} binary from the Netgear R6400. \mango can identify this vulnerability while \karonte and \satc will not analyze \texttt{dlnad}.}
+    \label{dlnad_vuln}
+    \lstinputlisting[style=mangostyle]{mango-assets/code/dlnad_vuln.c}
+\end{code}
+
+
+Listing~\ref{dlnad_vuln} shows a vulnerability in the Netgear R6400 router, which is in the dataset for \karonte and the ablation dataset \satc used.
+The vulnerability here is straightforward: a command injection based on the \texttt{iserver\_passcode} front-end keyword.
+\satc missed this vulnerability, and \karonte would have as well if it supported command injections.
+Both of these tools missed this vulnerability because the border binary analysis for both tools does not include \texttt{dlnad} as a potential target.
+For example, \satc prioritizes binaries with more references to frontend keywords and limits border binaries to three per firmware image.
+Due to the simple functionality and small size of \texttt{dlnad}, it is excluded by the border binary selection algorithm in \satc.
+
+\subsection{Firmware Vulnerability Analysis}
+\label{sec:observation}
+
+For finding taint-style vulnerabilities in firmware, prior work proposes two genres of techniques:
+(1) firmware rehosting and dynamic analysis and (2) static analysis.
+
+\smallskip
+\noindent
+\textbf{Firmware rehosting and dynamic analysis.}
+Given the limited computing capabilities of IoT devices, researchers attempt to run firmware services on commodity systems, usually using an emulator such as Qemu~\cite{qemu} to leverage dynamic analysis techniques such as fuzzing.
+While researchers have focused on making taint-style analysis more approachable~\cite{clause2007dytan,ming2016straighttaint,ming2015taintpipe}, the performance of dynamic techniques is limited by the effectiveness of firmware re-hosting, the quality of input seeds, and efficient coverage exploration, making it difficult for dynamic techniques to find taint-style vulnerabilities with reasonable scalability.
+
+Consider the motivating example in Listing~\ref{dlnad_vuln}: to use a dynamic analysis technique, an analyst must first identify the connection that \texttt{dlnad} has to \texttt{httpd} through NVRAM variables.
+It would be an unlikely target because it does not actively process user input like a web server would.
+Further, even if an analyst wanted to analyze \texttt{dlnad}, it requires a specific combination of NVRAM values and properly formatted user input for the variables to trigger.
+
+\smallskip
+\noindent
+\textbf{Static analysis.}
+Static analyses sacrifice precision for higher scalability.
+Analyzing binaries statically requires a deep understanding of the binary format, the underlying architecture, and the operating system for which the binary is built.
+A typical static analysis workflow includes disassembling, lifting to an intermediate language (IL), CFG recovery, and various types of advanced analysis atop.
+
+Symbolic execution on binaries~\cite{king1976symbolic,wang2017angr} allows tracking data flows in a binary:
+It simulates the execution of the target binary on a value domain of both concrete values and symbolic values (e.g., variables with unknown values), collects path constraints, and solves path constraints to derive possible values for symbolic values.
+The caveat is that symbolic execution is computationally expensive and suffers from path explosion~\cite{krishnamoorthy2010tackling}.
+Another technique for tracking data flows in a binary is static taint analysis~\cite{saxena2008efficient}.
+It marks the source of the data and tracks it through the program, approximating the effects of function calls until reaching sinks.
+Static taint analysis may suffer from over-tainting, marking values as tainted when they are not, and under-tainting, missing tainted values.
+
+Depending on the analysis goals, these static analyses may adopt value domains (e.g., the concrete domain where only concrete values are considered, or the value-set domain~\cite{balakrishnan2005codesurfer} where every value is modeled using its bits, lower- and upper-bounds, and its stride) with varied precision.
+
+\smallskip
+\noindent
+\textbf{Firmware taint analysis.}
+State-of-the-art static analysis techniques for finding firmware vulnerabilities, such as \karonte~\cite{karonte} and \satc~\cite{SaTC}, start their analysis from \emph{border binaries}, binaries that they determine to be reachable from the local network.
+\satc takes it one step further:
+It identifies common keywords in web API interfaces and ignores all other interfaces.
+
+While sometimes users knowingly communicate with their IoT devices via front-end web services (e.g., logging into a router's management portal), this is not the only available input vector for firmware services.
+Many services, such as \texttt{miniupnpd}, communicate without frontend interfaces but are open to receiving data from the local network, if not the Internet.
+By only focusing on border binaries and common web-API-style endpoints, \karonte and \satc are likely to miss a large portion of vulnerability sources, which leads to false negatives (i.e., missed vulnerabilities).
+
+
+\smallskip
+
+While static analysis is the more viable approach for finding taint-style vulnerabilities, both \karonte and \satc severely limit the potential vulnerability sources (by only analyzing border binaries and input locations with specific keywords), which impacts their ability to find vulnerabilities.
+Because \rda is more scalable, \mango takes a different approach:
+It analyzes \emph{every valid binary} in each firmware sample, flagging and filtering potential vulnerabilities.
+
+\subsection{Threat Model and Scope}
+\label{sec:threat_model}
+
+Unlike \karonte or \satc, we do not limit which binaries handle user input.
+Both use the concept of Border Binaries to limit the scope of their analysis to both reduce false positives and analysis times.
+However, \mango does not need this limit as it is able to analyze entire firmware samples in a reasonable amount of time.
+We do this exclusively on Linux-based user-space firmware binaries.
+
+\smallskip
+\noindent
+\textbf{Bug reports and triggerable vulnerabilities.}
+Because \mango runs on every binary in a given firmware, it identifies legitimate bugs in the current firmware regardless of whether the bugs are triggerable.
+For example, \mango can identify a vulnerable function that is unused or in an executable on the file system that an attacker cannot currently execute.
+While finding these bugs is essential, in this paper, we give a higher priority to finding \emph{triggerable} vulnerabilities\footnote{When we conduct responsible disclosure for vulnerabilities to vendors, they would only accept vulnerability reports that come with Proof-of-Concept exploits (PoCs) that trigger the vulnerability and proactively reject vulnerability reports without PoCs.}.
+We coin these triggerable vulnerabilities \emph{True PoCable vulnerabilities}, or \emph{\trupoc}s in short.
+We implement a filtering system (described in Section \ref{sec:alert-ranking}) to prioritize bug reports that are more likely to be reachable by an attacker, thereby separating triggerable vulnerabilities from ordinary bug reports.
+
+
+% ============================================================
+%  From Artiphishell paper — Section 2
+% ============================================================
+
+\section{Artiphishell}
+\label{sec:bg-artiphishell}
+
+\subsection{The AI Cyber Challenge}
+\label{sec:bg-aixcc}
+The Artificial Intelligence Cyber Challenge (AIxCC)~\cite{aixcc} seeks to counteract the threat posed by the exploitation of security flaws in critical software by harnessing the power of artificial intelligence.
+The competition is organized by DARPA in collaboration with ARPA-H and leading AI firms, and it is a two-year, \$29.5 million competition designed to advance automated cybersecurity technologies capable of protecting critical open-source software systems.
+
+AIxCC brings together the cybersecurity and AI communities to design autonomous CRSs that can identify and patch software vulnerabilities.
+The competition unfolds over a series of structured rounds, including three unscored exhibitions and one scored final round, culminating at DEF CON 33 in August 2025.
+Prizes have been distributed to encourage broad participation, including awards to small businesses during the initial phase.
+
+CRSs compete by solving real-world software challenges, which simulate critical infrastructure use cases.
+Each challenge is a codebase that may contain known (injected) or unknown (zero-day) vulnerabilities.
+These challenges fall into two categories: full-scan (analyzing the entire codebase) and delta-scan (analyzing code changes).
+
+\newpage
+\noindent
+To succeed, CRSs must:
+\begin{itemize}
+    \item Discover vulnerabilities and demonstrate them through Proofs of Vulnerability (PoVs).
+    \item Automatically generate patches that fix vulnerabilities while preserving functionality.
+    \item Assess SARIF (Static Analysis Results Interchange Format) reports~\cite{sarif} for correctness.
+    \item Bundle findings to show relationships between vulnerabilities, patches, and SARIF reports.
+\end{itemize}
+
+Submissions are evaluated by completeness, automated verification, and post-round audits.
+Scoring is multifaceted, assessing vulnerability discovery, patch effectiveness, SARIF assessment accuracy, and the precision of bundle submissions.
+An Accuracy Multiplier penalizes spammy or incorrect outputs, encouraging precision.
+
+Strict rules prohibit unethical tactics such as submitting misleading patches (called ``Superman defenses''), exploiting the competition infrastructure, or misusing collaborator resources.
+CRS models must be open, reproducible, and submitted via designated GitHub repositories.
+Teams are allotted specific budgets for Azure resources and LLM usage, and their systems must operate within a controlled, partially offline, fully-autonomous environment.
+
+By combining AI innovation with rigorous security testing, AIxCC aims to accelerate the development of trustworthy tools that can autonomously secure the software ecosystem, particularly in sectors where reliability is vital to public health and safety.
+
+\subsection{The Cyber Grand Challenge}
+\label{sec:bg-cgc}
+
+The AIxCC is the follow-up competition to the Cyber Grand Challenge (CGC).
+The CGC, launched by DARPA in 2014 and culminating at DEF CON 24 in 2016, was a cybersecurity competition that introduced the concept of autonomous cyber reasoning systems.
+Unlike traditional capture-the-flag (CTF) competitions, where human experts identify and patch software vulnerabilities, the CGC challenged teams to build fully autonomous systems capable of performing these tasks without human intervention.
+These systems had to analyze binary software, identify security flaws, generate working exploits, and apply effective patches, all within a constrained environment and under real-time pressure.
+
+The competition featured a specially constructed testbed and operating system known as DECREE (DARPA Experimental Cyber Research Evaluation Environment), which ensured fairness and consistency across challenges.
+CGC finalists were selected through a rigorous qualification phase, and seven teams ultimately competed in the final event.
+The system of each team operated entirely independently, engaging in a head-to-head competition that tested each system's ability to defend its own software while exploiting vulnerabilities in the software of other teams.
+The event marked the first time machines competed in a full-scale hacking competition, with no human in the loop.
+
+The CGC significantly advanced research in automated vulnerability discovery and program repair.
+It laid the foundation for future cybersecurity automation initiatives, including AIxCC, by demonstrating that autonomous systems could meaningfully participate in offensive and defensive cyber operations.
+Although limited to binaries and constrained in scope, the CGC proved that real-time, machine-scale vulnerability management was not only possible but potentially transformative.
+
+\subsection{OSS-Fuzz}
+\label{sec:bg-ossfuzz}\label{sec:oss-fuzz}
+OSS-Fuzz~\cite{oss-fuzz} is a security-focused initiative launched by Google with the aim of improving the robustness of open-source software through automated fuzz testing.
+Fuzzing, or fuzz testing, is a technique that involves feeding randomized, potentially malformed, inputs to a program in order to discover security vulnerabilities, crashes, or unexpected behavior.
+OSS-Fuzz automates this process at scale for open-source projects, providing a continuous fuzzing infrastructure that can detect a wide range of memory safety issues such as buffer overflows, use-after-free bugs, integer overflows, and more.
+By leveraging fuzzing engines like libFuzzer~\cite{libfuzzer}, AFL++~\cite{aflplusplus}, Honggfuzz~\cite{honggfuzz}, and Jazzer~\cite{jazzer} in conjunction with sanitizers such as AddressSanitizer, UndefinedBehaviorSanitizer, and MemorySanitizer, OSS-Fuzz has been instrumental in identifying and helping fix thousands of vulnerabilities across a broad spectrum of widely used open-source software.
+
+The primary goal of OSS-Fuzz is to enhance the long-term security and stability of open-source infrastructure by offering free fuzzing services to critical projects.
+The types of software targeted by OSS-Fuzz include, but are not limited to, libraries and tools that are used widely across the industry.
+This includes components of operating systems, network protocols, image and video parsers, cryptographic libraries, and parsers for common formats like XML and JSON.
+These projects are often written in memory-unsafe languages like C or C++, where fuzzing is particularly effective.
+The analysis performed by OSS-Fuzz is continuous; the projects are built and fuzzed automatically on an ongoing basis, ensuring new code or dependencies are regularly evaluated.
+
+Projects submitted to OSS-Fuzz must conform to a certain structure to be successfully integrated into the fuzzing pipeline.
+Each submitted project includes a Dockerfile that specifies the build environment, which must include all necessary dependencies and configuration needed to compile the target software and its associated fuzzers.
+The fuzzing targets themselves, known as \emph{fuzzing harnesses}, are small programs that call into the software being tested and expose entry points that can accept arbitrary inputs.
+These harnesses need to link against libFuzzer (or other supported fuzzing engines) and must define an entry point with a signature like:
+\begin{verbatim}
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+\end{verbatim}
+This function is called repeatedly with randomly generated inputs to exercise as much of the target's codebase as possible.
+These harnesses should aim to exercise core parsing, decoding, or processing functionality where untrusted input is handled.
+
+If a crash or bug is discovered, OSS-Fuzz notifies the maintainers with detailed reports, stack traces, and reproducible test cases.
+
+The effectiveness of OSS-Fuzz lies in its scalability and automation.
+Continuously fuzzing important open-source projects and integrating tightly with sanitizers and modern fuzzers helps maintainers detect and fix vulnerabilities proactively before they are exploited in the wild.

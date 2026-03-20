@@ -76,52 +76,29 @@ Notable examples of this include auto-generated code (e.g., in parser-generators
 
 \begin{figure}[H]
 \centering
-\textbf{Nautilus JSON Format}
-\begin{lstlisting}[language={},basicstyle=\footnotesize\ttfamily,frame=single]
+\begin{lstlisting}[language={},basicstyle=\scriptsize\ttfamily,frame=single,breaklines=true]
 { "rules": {
     "START": [[{"NT": "HTML"}]],
-    "HTML": [
-      [ {"T": "<html>"},
-        {"NT": "HEAD"},
-        {"NT": "BODY"},
-        {"T": "</html>"}
-      ]],
-    "HEAD": [
-      [{"T": "<head>"},
-        {"NT": "TITLE"},
-        {"T": "</head>"}
-      ]],
-    "TITLE": [
-      [{"T": "<title>"},
-        {"NT": "TEXT"},
-        {"T": "</title>"}
-      ]],
-    "BODY": [
-      [{"T": "<body>"},
-        {"NT": "CONTENT"},
-        {"T": "</body>"}
-      ]],
+    "HTML":  [[{"T": "<html>"}, {"NT": "HEAD"}, {"NT": "BODY"}, {"T": "</html>"}]],
+    "HEAD":  [[{"T": "<head>"}, {"NT": "TITLE"}, {"T": "</head>"}]],
+    "TITLE": [[{"T": "<title>"}, {"NT": "TEXT"}, {"T": "</title>"}]],
+    "BODY":  [[{"T": "<body>"}, {"NT": "CONTENT"}, {"T": "</body>"}]],
     "CONTENT": [
       [{"NT": "PARAGRAPH"}],
       [{"NT": "HEADING"}],
       [{"NT": "PARAGRAPH"}, {"NT": "CONTENT"}]],
-    "HEADING": [
-      [{"T": "<h1>"},
-        {"NT": "TEXT"},
-        {"T": "</h1>"}
-      ]],
-    "PARAGRAPH": [
-      [{"T": "<p>"},
-        {"NT": "TEXT"},
-        {"T": "</p>"}
-      ]],
-    "TEXT": [
-      [{"T": "Hello World"}]
-    ]}}
+    "HEADING":   [[{"T": "<h1>"}, {"NT": "TEXT"}, {"T": "</h1>"}]],
+    "PARAGRAPH": [[{"T": "<p>"}, {"NT": "TEXT"}, {"T": "</p>"}]],
+    "TEXT": [[{"T": "Hello World"}]]
+}}
 \end{lstlisting}
+\caption{Nautilus JSON grammar format}
+\label{fig:grammar-format-json}
+\end{figure}
 
-\textbf{Nautilus Python Format}
-\begin{lstlisting}[language=Python,basicstyle=\footnotesize\ttfamily,frame=single]
+\begin{figure}[H]
+\centering
+\begin{lstlisting}[language=Python,basicstyle=\scriptsize\ttfamily,frame=single]
 # Basic HTML Grammar
 ctx.rule("START", b"{HTML}")
 
@@ -147,7 +124,6 @@ ctx.rule("PARAGRAPH", b"<p>{TEXT}</p>")
 # Text content
 ctx.literal("TEXT", b"Hello World")
 \end{lstlisting}
-
-\caption{Side-by-side comparison of Nautilus supported JSON and Python format for grammar representation}
-\label{fig:grammar-format-comparison}
+\caption{Nautilus Python grammar format}
+\label{fig:grammar-format-python}
 \end{figure}

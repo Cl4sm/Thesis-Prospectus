@@ -117,111 +117,18 @@ Our paper makes the following contributions:
 
 \smallskip
 \noindent
+\begin{sloppypar}
 In the spirit of open science, the source code and artifacts of \mango, along with a Docker image for replicating our experiments, can be found at \url{https://github.com/sefcom/operation-mango-public}.
 The contributions in this paper will also be integrated into angr~\cite{wang2017angr}.
+\end{sloppypar}
 
 
 % ============================================================
 %  SECTION: Background
 % ============================================================
-\section{Background}
-\label{sec:background}
-
-Before diving into the technical details of \mango, we provide the necessary background information on vulnerabilities in binary firmware services and discuss the associated challenges in discovering them with state-of-the-art static analysis techniques.
-
-\subsection{Firmware Types}
-
-Qasem et al.~\cite{qasem2021automatic} categorized firmware into three types:
-Type~I, where there is a clear separation between the Operating System (OS) and the contained firmware services (in terms of files and processes), Type~II, where the OS and services are combined into a monolithic binary blob, and Type~III, where there is no OS but only logic embedded in a blob.
-
-Type~II and Type~III firmware are typically used to implement software for programmable logic controllers (PLCs) and real-time, low-power embedded devices (generally with less complicated logic).
-Type~I firmware is more commonly seen in feature-rich and complex IoT devices such as routers, webcams, or networked CCTVs, where the OS is usually embedded Linux and services are ELF binaries (of varying architectures).
-A 2014 study by Costin et al.~\cite{costin2014large} found that over 86\% of firmware samples in a large dataset of 32,356 images were Type~I firmware using embedded Linux as the OS.
-Similar to prior work~\cite{celik2018sensitive,mandal2020cross} in this area, our research focuses on finding taint-style vulnerabilities in the user-space services of Type~I firmware.
-
-
-\subsection{Motivating Example}
-\label{sec:motivating_example}
-
-\begin{code}
-    \caption{Decompiled code of the \texttt{httpd} and \texttt{dlnad} binary from the Netgear R6400. \mango can identify this vulnerability while \karonte and \satc will not analyze \texttt{dlnad}.}
-    \label{dlnad_vuln}
-    \lstinputlisting[style=mangostyle]{mango-assets/code/dlnad_vuln.c}
-\end{code}
-
-
-Listing~\ref{dlnad_vuln} shows a vulnerability in the Netgear R6400 router, which is in the dataset for \karonte and the ablation dataset \satc used.
-The vulnerability here is straightforward: a command injection based on the \texttt{iserver\_passcode} front-end keyword.
-\satc missed this vulnerability, and \karonte would have as well if it supported command injections.
-Both of these tools missed this vulnerability because the border binary analysis for both tools does not include \texttt{dlnad} as a potential target.
-For example, \satc prioritizes binaries with more references to frontend keywords and limits border binaries to three per firmware image.
-Due to the simple functionality and small size of \texttt{dlnad}, it is excluded by the border binary selection algorithm in \satc.
-
-\subsection{Firmware Vulnerability Analysis}
-\label{sec:observation}
-
-For finding taint-style vulnerabilities in firmware, prior work proposes two genres of techniques:
-(1) firmware rehosting and dynamic analysis and (2) static analysis.
-
-\smallskip
-\noindent
-\textbf{Firmware rehosting and dynamic analysis.}
-Given the limited computing capabilities of IoT devices, researchers attempt to run firmware services on commodity systems, usually using an emulator such as Qemu~\cite{qemu} to leverage dynamic analysis techniques such as fuzzing.
-While researchers have focused on making taint-style analysis more approachable~\cite{clause2007dytan,ming2016straighttaint,ming2015taintpipe}, the performance of dynamic techniques is limited by the effectiveness of firmware re-hosting, the quality of input seeds, and efficient coverage exploration, making it difficult for dynamic techniques to find taint-style vulnerabilities with reasonable scalability.
-
-Consider the motivating example in Listing~\ref{dlnad_vuln}: to use a dynamic analysis technique, an analyst must first identify the connection that \texttt{dlnad} has to \texttt{httpd} through NVRAM variables.
-It would be an unlikely target because it does not actively process user input like a web server would.
-Further, even if an analyst wanted to analyze \texttt{dlnad}, it requires a specific combination of NVRAM values and properly formatted user input for the variables to trigger.
-
-\smallskip
-\noindent
-\textbf{Static analysis.}
-Static analyses sacrifice precision for higher scalability.
-Analyzing binaries statically requires a deep understanding of the binary format, the underlying architecture, and the operating system for which the binary is built.
-A typical static analysis workflow includes disassembling, lifting to an intermediate language (IL), CFG recovery, and various types of advanced analysis atop.
-
-Symbolic execution on binaries~\cite{king1976symbolic,wang2017angr} allows tracking data flows in a binary:
-It simulates the execution of the target binary on a value domain of both concrete values and symbolic values (e.g., variables with unknown values), collects path constraints, and solves path constraints to derive possible values for symbolic values.
-The caveat is that symbolic execution is computationally expensive and suffers from path explosion~\cite{krishnamoorthy2010tackling}.
-Another technique for tracking data flows in a binary is static taint analysis~\cite{saxena2008efficient}.
-It marks the source of the data and tracks it through the program, approximating the effects of function calls until reaching sinks.
-Static taint analysis may suffer from over-tainting, marking values as tainted when they are not, and under-tainting, missing tainted values.
-
-Depending on the analysis goals, these static analyses may adopt value domains (e.g., the concrete domain where only concrete values are considered, or the value-set domain~\cite{balakrishnan2005codesurfer} where every value is modeled using its bits, lower- and upper-bounds, and its stride) with varied precision.
-
-\smallskip
-\noindent
-\textbf{Firmware taint analysis.}
-State-of-the-art static analysis techniques for finding firmware vulnerabilities, such as \karonte~\cite{karonte} and \satc~\cite{SaTC}, start their analysis from \emph{border binaries}, binaries that they determine to be reachable from the local network.
-\satc takes it one step further:
-It identifies common keywords in web API interfaces and ignores all other interfaces.
-
-While sometimes users knowingly communicate with their IoT devices via front-end web services (e.g., logging into a router's management portal), this is not the only available input vector for firmware services.
-Many services, such as \texttt{miniupnpd}, communicate without frontend interfaces but are open to receiving data from the local network, if not the Internet.
-By only focusing on border binaries and common web-API-style endpoints, \karonte and \satc are likely to miss a large portion of vulnerability sources, which leads to false negatives (i.e., missed vulnerabilities).
-
-\smallskip
-
-While static analysis is the more viable approach for finding taint-style vulnerabilities, both \karonte and \satc severely limit the potential vulnerability sources (by only analyzing border binaries and input locations with specific keywords), which impacts their ability to find vulnerabilities.
-Because \rda is more scalable, \mango takes a different approach:
-It analyzes \emph{every valid binary} in each firmware sample, flagging and filtering potential vulnerabilities.
-
-\subsection{Threat Model and Scope}
-\label{sec:threat_model}
-
-Unlike \karonte or \satc, we do not limit which binaries handle user input.
-Both use the concept of Border Binaries to limit the scope of their analysis to both reduce false positives and analysis times.
-However, \mango does not need this limit as it is able to analyze entire firmware samples in a reasonable amount of time.
-We do this exclusively on Linux-based user-space firmware binaries.
-
-\smallskip
-\noindent
-\textbf{Bug reports and triggerable vulnerabilities.}
-Because \mango runs on every binary in a given firmware, it identifies legitimate bugs in the current firmware regardless of whether the bugs are triggerable.
-For example, \mango can identify a vulnerable function that is unused or in an executable on the file system that an attacker cannot currently execute.
-While finding these bugs is essential, in this paper, we give a higher priority to finding \emph{triggerable} vulnerabilities\footnote{When we conduct responsible disclosure for vulnerabilities to vendors, they would only accept vulnerability reports that come with Proof-of-Concept exploits (PoCs) that trigger the vulnerability and proactively reject vulnerability reports without PoCs.}.
-We coin these triggerable vulnerabilities \emph{True PoCable vulnerabilities}, or \emph{\trupoc}s in short.
-We implement a filtering system (described in Section \ref{sec:alert-ranking}) to prioritize bug reports that are more likely to be reachable by an attacker, thereby separating triggerable vulnerabilities from ordinary bug reports.
+% Background content has been moved to Chapter~\ref{ch:background}.
+% Firmware types, motivating example, vulnerability analysis, and threat model
+% are now in the shared Background chapter.
 
 
 % ============================================================

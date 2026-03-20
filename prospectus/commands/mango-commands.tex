@@ -35,8 +35,14 @@
 \definecolor{cross-red}{RGB}{206,16,16}
 
 % ---- Code Listing Environment ----
-% Replaces the minted-based code float from the paper with a listings-based version
-\newenvironment{code}{\begin{figure}[tb]}{\end{figure}}
+% Wraps a figure float but relabels the caption prefix to "Listing"
+% so that \caption produces "Listing X.Y" (matching prose references).
+\newenvironment{code}{%
+  \begin{figure}[tb]%
+  \renewcommand{\figurename}{Listing}%
+}{%
+  \end{figure}%
+}
 
 % ---- Listing Style ----
 \lstdefinestyle{mangostyle}{

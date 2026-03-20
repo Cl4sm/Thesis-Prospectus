@@ -1,0 +1,14 @@
+{# Standard content slide — maroon title bar + markdown body #}
+<div class="slide flex flex-col" id="slide-{{ slide._index }}">
+    <div class="bg-maroon text-white font-normal px-10 md:px-14 py-5 md:py-7 border-b-4 border-maroon-dark shrink-0" style="font-size: clamp(3.3rem, 5.7vw, 4.8rem);">
+        {{ slide.title }}
+    </div>
+    <div class="flex-1 px-8 md:px-12 py-3 md:py-5 overflow-hidden flex flex-col justify-center">
+        <div class="slide-body">
+            {{ slide.body_html | safe }}
+        </div>
+    </div>
+    {% if slide.footnote %}
+    <div class="slide-footnote">{{ slide.footnote | safe }}</div>
+    {% endif %}
+</div>

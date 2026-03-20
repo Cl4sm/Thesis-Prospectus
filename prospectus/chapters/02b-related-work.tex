@@ -1,0 +1,95 @@
+% ============================================================
+%  CHAPTER: RELATED WORK
+%  Moved from the background chapter into its own chapter.
+%  Contains related work for both Operation Mango and Artiphishell.
+% ============================================================
+\chapter{Related Work}
+\label{ch:related-work}
+
+
+% ============================================================
+%  Related Work — Operation Mango
+% ============================================================
+
+\section{Operation Mango}
+\label{sec:related}
+
+\noindent
+\textbf{Static solutions.}
+\karonte~\cite{karonte} was one of the first to introduce multi-binary interactions to static analysis in the context of IoT devices.
+Their approach models several input sources, such as environment variables and NVRAM entries, and propagates that information from producer binaries to consumer binaries.
+\satc~\cite{SaTC} continues their approach, but instead of including network interactions as their sources, they use keywords found in front-end files such as JavaScript and PHP.
+They capture directly exploitable vulnerabilities via user input in these front-end files.
+This increases the likelihood that \trupoc{}s will be true positives.
+However, they ignore other critical binaries in favor of their border binaries.
+Both \karonte and \satc severely limit the scope of analysis for efficiency and reduced false positive rates.
+For example, \karonte and \satc only analyze binaries that are obviously reachable from the outside network; \satc limits input sources even more by enforcing keyword matches.
+As such, they both suffer from high numbers of missed vulnerabilities, as is evidenced by the discrepancy of true positives between \mango and \satc on \karonte's dataset.
+\mango avoids this limitation by significantly increasing the analysis efficiency through design benefits (using static data-flow analysis instead of taint tracking and symbolic exploration) and algorithmic improvements (\rev and \assumed).
+
+Saluki~\cite{gotovchits2018saluki} produces an extremely fast static analysis through the micro execution of paths in the binary.
+Though this approach is much faster than previous work, it requires precise vulnerability descriptions using their custom language, making the tool difficult to use and highly specific.
+\mango takes a much more general approach where categories of sinks defined by function names are set.
+Arbiter~\cite{vadayath2022arbiter} begins to cross into the boundary of dynamic analysis with their use of Under-Constrained Symbolic Execution (UCSE).
+They approach the problem of vulnerability verification with a static taint analysis followed by UCSE for reachability verification.
+However, their approach only works on x86-64 binaries, unlike \mango, which also runs on MIPS and ARM binaries.
+Firmalice~\cite{shoshitaishvili2015firmalice} provides backdoor detection and verification in firmware binaries using symbolic execution but is bound by the overhead of symbolic exploration.
+Similarly, FIE~\cite{davidson2013fie} uses symbolic execution to analyze open-source MSP430 firmware binaries, but there are various firmware binaries that are intractable to analyze with this tool.
+
+\medskip
+\noindent
+\textbf{Firmware rehosting and dynamic analysis.}
+Firmware rehosting refers to the process of running or emulating firmware on workstations or servers for interaction and security auditing.
+Most work in this area conducts full-system emulation of firmware targets, but several have extracted pieces to be analyzed separately~\cite{redini2017bootstomp,costin2014large}.
+Once rehosting succeeds, researchers usually move on to vulnerability testing (e.g., using Metasploit) or fuzzing~\cite{chen2018iotfuzzer,ruge2020frankenstein}.
+Costin et al.~\cite{costin2014large} used full-system emulation to rehost COTS firmware, and then used web penetration tools to find vulnerabilities in web servers on rehosted firmware.
+Firmadyne~\cite{chen2016towards}, Avatar~\cite{zaddach2014avatar}, Avatar$^2$~\cite{muench2018avatar2}, and FirmAE~\cite{kim2020firmae} provides more automation into the full-system rehosting process by QEMU-system to rehost firmware images in a large scale.
+
+Unfortunately, rehosting is usually exceptionally tedious and error-prone, and access to peripherals only available on the original IoT devices is lost.
+Therefore, PROSPECT~\cite{kammerstetter2014prospect}, CHARM~\cite{talebi2018charm}, and SURROGATES~\cite{koscher2015surrogates} conducts hardware-in-the-loop operations during firmware emulation.
+HALucinator~\cite{clements2020halucinator} and DICE~\cite{mera2021dice} emulate Hardware Abstraction Layers (HALs) and the DMA (Direct Memory Access) channel.
+Usually, fuzzing is a natural application after firmware rehosting~\cite{zheng2019firm,zheng2022efficient,srivastava2019firmfuzz,feng2021snipuzz}.
+
+
+% ============================================================
+%  Related Work — Artiphishell
+% ============================================================
+
+\section{Artiphishell}
+\label{sec:rw-artiphishell}
+
+\noindent
+\textbf{Cyber reasoning systems.}
+The Cyber Grand Challenge (CGC)~\cite{darpa2016cgc} produced the first generation of autonomous CRSs such as Mechanical Phish~\cite{shoshitaishvili2018mechanical}, which coordinated multiple analysis backends under real-time competition constraints.
+These systems operated on simplified binaries under the DECREE OS with fixed system call interfaces.
+AIxCC~\cite{aixcc} extends this paradigm to real-world open-source C, C++, and Java software with full build systems, complex dependencies, and realistic vulnerability classes.
+Zhang et al.~\cite{zhang2026sokaixcc} provide a systematization of AIxCC finalist architectures and the competition's lessons for autonomous vulnerability discovery.
+
+\medskip
+\noindent
+\textbf{Coverage-guided and grammar-based fuzzing.}
+AFL++~\cite{aflplusplus} is the predominant coverage-guided greybox fuzzer, integrating power schedules~\cite{bohme2016aflfast}, mutation optimization~\cite{lyu2019mopt}, and input-to-state feedback~\cite{aschermann2019redqueen} into a modular framework.
+For structured inputs, grammar-based fuzzers such as Nautilus~\cite{nautilus} and Grammarinator~\cite{grammarinator} generate syntactically valid test cases that penetrate past parsing stages.
+Jazzer~\cite{jazzer} is a java fuzzer with bytecode-level instrumentation in the JVM.
+IJON~\cite{aschermann2020ijon} explores deep state spaces via developer-annotated program states.
+LLMs have also been applied to fuzzing: TitanFuzz~\cite{deng2023titanfuzz} generates API call sequences without a seed corpus, ChatAFL~\cite{meng2024chatafl} uses LLM-guided protocol message generation to reach deeper server states, and Fuzz4All~\cite{xia2024fuzz4all} generalizes LLM-based input generation across programming languages.
+
+\medskip
+\noindent
+\textbf{Static vulnerability detection.}
+Pattern-based static analysis tools such as CodeQL~\cite{codeql} and Semgrep~\cite{semgrep} encode vulnerability patterns as declarative queries, trading depth for speed.
+Learning-based approaches predict vulnerable components from call-graph features~\cite{Neuhaus2007}, complexity metrics~\cite{Moshtari2013}, or transformer-based source and binary representations~\cite{thapa2022vuldeepecker}.
+Bran~\cite{meng2021:Bran} narrows the search space in large repositories by learning syntactic and semantic bug symptoms.
+
+\medskip
+\noindent
+\textbf{Automated program repair.}
+GenProg~\cite{legoues2012genprog} pioneered generate-and-validate repair via genetic programming; SemFix~\cite{nguyen2013semfix} introduced semantic repair through symbolic path conditions; and Angelix~\cite{mechtaev2016angelix} scaled semantic repair to multiline patches.
+These classical techniques depend on high-quality test suites for validation.
+LLM-based repair does not require as much available information to make repairs, Pearce et al.~\cite{pearce2023zeroshotvulnrepair} showed that LLMs can produce valid patches for certain CWE classes without fine-tuning, and PatchAgent~\cite{yu2025patchagent} decomposes repair into a multi-stage workflow (analysis, root cause localization, targeted synthesis) that mirrors expert reasoning.
+
+\medskip
+\noindent
+\textbf{Root cause analysis.}
+AURORA~\cite{aurora} localizes root causes by statistically comparing execution traces of crashing and non-crashing inputs.
+BENZENE~\cite{benzene} mutates program state under under-constrained conditions to isolate causally responsible memory operations.
