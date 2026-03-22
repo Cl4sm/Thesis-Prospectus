@@ -5,19 +5,18 @@ title: "Mango — Summary"
 
 ### What Mango Achieves
 
-- **Scalable detection** across every binary in a firmware image (27x more than SaTC)
-- **Precise value tracking** via Rich Expressions (not binary taint bits)
-- **8 min/binary** average — practical for large-scale deployment
-- **TruPoC ranking** prioritizes alerts by attacker reachability (70% true positive rate)
-- **166 confirmed exploitable vulnerabilities** across 1,698 firmware images
+- **Scalable detection** across every binary (27x more than SaTC)
+- **Precise value tracking** via Rich Expressions
+- **8 min/binary** average — practical at scale
+- **70% true positive rate** — vendors accept findings
+- **166 exploitable vulnerabilities** confirmed
 
 ### What Remains
 
-- Candidates are static hypotheses — **no concrete Proof-of-Concept**
-- Path feasibility is unknown: is the flagged path actually reachable?
-- Vendors reject reports without PoCs
+- Candidates lack concrete Proof-of-Concept
+- Path feasibility unknown: is it reachable?
 
-*Mango scales detection. Next: can we confirm these findings?*
+*Mango scales detection. Next: confirm these findings.*
 
 ???
 

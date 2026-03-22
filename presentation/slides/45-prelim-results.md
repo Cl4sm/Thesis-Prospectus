@@ -16,7 +16,7 @@ title: "Preliminary Results"
   </defs>
 
   <!-- Title/Target -->
-  <text x="750" y="25" font-size="12" fill="#666" font-weight="600" text-anchor="end">Netgear SR700S</text>
+  <text x="750" y="25" font-size="12" fill="#666" font-weight="600" text-anchor="end">Netgear R6400</text>
 
   <!-- Stage 1: Static Candidates -->
   <g filter="url(#shadow)">

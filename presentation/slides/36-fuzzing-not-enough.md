@@ -19,7 +19,7 @@ footnote: "Source: Gritti et al., 'SoK: DARPA's AI Cyber Challenge,' arXiv:2602.
   <!-- Multi-technique section (46%) -->
   <rect x="181.2" y="50" width="128.8" height="50" fill="#8C1D40" rx="4"/>
   <text x="245" y="81" font-size="11" font-weight="bold" text-anchor="middle" fill="white">46%</text>
-  <text x="245" y="95" font-size="9" text-anchor="middle" fill="white">Multi-Technique</text>
+  <text x="245" y="95" font-size="10" text-anchor="middle" fill="white">Multi-Technique</text>
 
   <!-- Arrow and label -->
   <text x="150" y="130" font-size="12" font-weight="bold" text-anchor="middle" fill="#8C1D40">Required Different Approaches</text>
@@ -44,7 +44,7 @@ footnote: "Source: Gritti et al., 'SoK: DARPA's AI Cyber Challenge,' arXiv:2602.
 
   <!-- Key insight annotation -->
   <rect x="480" y="285" width="240" height="30" fill="#fff3e0" stroke="#FF9800" stroke-width="1" rx="3"/>
-  <text x="600" y="305" font-size="10" font-weight="bold" text-anchor="middle" fill="#E65100">More CPU cores ≠ more bugs found</text>
+  <text x="600" y="305" font-size="11" font-weight="bold" text-anchor="middle" fill="#E65100">More CPU cores ≠ more bugs found</text>
 </svg>
 
 ???

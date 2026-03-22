@@ -29,7 +29,7 @@ window.addEventListener("load", function() {
 
     // Metric label
     svg.append("text").attr("x", -10).attr("y", gy + barH)
-      .attr("text-anchor", "end").style("font-size", "13px").style("font-weight", "600").style("fill", "#333")
+      .attr("text-anchor", "end").style("font-size", "15px").style("font-weight", "600").style("fill", "#333")
       .text(m.label);
 
     // SaTC bar
@@ -37,28 +37,28 @@ window.addEventListener("load", function() {
       .attr("width", Math.max(scale(m.satc), 3)).attr("height", barH)
       .attr("fill", "#ccc").attr("rx", 3);
     svg.append("text").attr("x", scale(m.satc) + 8).attr("y", gy + barH - 5)
-      .style("font-size", "12px").style("fill", "#666").text(m.satc.toLocaleString());
+      .style("font-size", "14px").style("fill", "#666").text(m.satc.toLocaleString());
 
     // Mango bar
     svg.append("rect").attr("x", 0).attr("y", gy + barH + 8)
       .attr("width", scale(m.mango)).attr("height", barH)
       .attr("fill", "#8C1D40").attr("rx", 3);
     svg.append("text").attr("x", scale(m.mango) + 8).attr("y", gy + barH*2 + 3)
-      .style("font-size", "12px").style("font-weight", "700").style("fill", "#8C1D40")
+      .style("font-size", "14px").style("font-weight", "700").style("fill", "#8C1D40")
       .text(m.mango.toLocaleString());
 
     // Multiplier badge
     svg.append("text").attr("x", width + 50).attr("y", gy + barH + 10)
       .attr("text-anchor", "middle")
-      .style("font-size", "16px").style("font-weight", "800").style("fill", "#8C1D40")
+      .style("font-size", "18px").style("font-weight", "800").style("fill", "#8C1D40")
       .text(m.mult);
 
     // Tool labels (only on first group)
     if (i === 0) {
       svg.append("text").attr("x", scale(m.satc) + 40).attr("y", gy + barH - 5)
-        .style("font-size", "10px").style("fill", "#999").text("SaTC");
+        .style("font-size", "12px").style("fill", "#999").text("SaTC");
       svg.append("text").attr("x", scale(m.mango) + 50).attr("y", gy + barH*2 + 3)
-        .style("font-size", "10px").style("fill", "#8C1D40").text("Mango");
+        .style("font-size", "12px").style("fill", "#8C1D40").text("Mango");
     }
   });
 });

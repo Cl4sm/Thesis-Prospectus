@@ -45,21 +45,21 @@ window.addEventListener("load", function() {
   svg.selectAll(".val").data(data).enter().append("text")
     .attr("y", d => y(d.vendor) + y.bandwidth()/2 + 4)
     .attr("x", d => x(d.alerts) + 6)
-    .style("font-size", "11px").style("font-weight", "700").style("fill", "#8C1D40")
+    .style("font-size", "13px").style("font-weight", "700").style("fill", "#8C1D40")
     .text(d => d.alerts.toLocaleString());
 
   // Y-axis (vendor names)
   svg.append("g").call(d3.axisLeft(y).tickSize(0).tickPadding(8))
-    .selectAll("text").style("font-size", "12px").style("fill", "#333");
+    .selectAll("text").style("font-size", "14px").style("fill", "#333");
   svg.select(".domain").remove();
 
   // X-axis
   svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x).ticks(4).tickFormat(d3.format(",")))
-    .selectAll("text").style("font-size", "10px").style("fill", "#666");
+    .selectAll("text").style("font-size", "12px").style("fill", "#666");
 
   // X-axis label
   svg.append("text").attr("x", width/2).attr("y", height + 22)
-    .attr("text-anchor", "middle").style("font-size", "10px").style("fill", "#666").text("Vulnerability Alerts");
+    .attr("text-anchor", "middle").style("font-size", "12px").style("fill", "#666").text("Vulnerability Alerts");
 });
 </script>
 

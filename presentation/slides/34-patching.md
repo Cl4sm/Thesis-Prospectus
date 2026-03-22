@@ -21,10 +21,10 @@ title: "Patch Generation & Verification"
 
   <!-- ===== INPUT: Root Cause Analysis ===== -->
   <rect x="15" y="130" width="130" height="100" rx="8" fill="#f5f5f5" stroke="#666" stroke-width="1.5" filter="url(#p-shadow)"/>
-  <text x="80" y="160" font-size="11" font-weight="700" text-anchor="middle" fill="#333" font-family="Inter, sans-serif">Root Cause</text>
-  <text x="80" y="178" font-size="10" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Kumushi (statistical)</text>
-  <text x="80" y="193" font-size="10" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">DyVA (LLM agent)</text>
-  <text x="80" y="208" font-size="10" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">SARIF triage</text>
+  <text x="80" y="160" font-size="13" font-weight="700" text-anchor="middle" fill="#333" font-family="Inter, sans-serif">Root Cause</text>
+  <text x="80" y="178" font-size="12" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Kumushi (statistical)</text>
+  <text x="80" y="193" font-size="12" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">DyVA (LLM agent)</text>
+  <text x="80" y="208" font-size="12" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">SARIF triage</text>
 
   <!-- ===== SPLIT ARROWS to two patchers ===== -->
   <line x1="145" y1="160" x2="195" y2="90" stroke="#666" stroke-width="2" marker-end="url(#p-arr)"/>
@@ -38,22 +38,22 @@ title: "Patch Generation & Verification"
 
   <!-- Kumushi clusters -->
   <rect x="215" y="60" width="120" height="50" rx="4" fill="#fff" stroke="#FF9800" stroke-width="1.5"/>
-  <text x="275" y="78" font-size="10" font-weight="600" text-anchor="middle" fill="#E65100" font-family="Inter, sans-serif">Kumushi Clusters</text>
-  <text x="275" y="93" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">One function at a time</text>
-  <text x="275" y="105" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Scoped edit region</text>
+  <text x="275" y="78" font-size="12" font-weight="600" text-anchor="middle" fill="#E65100" font-family="Inter, sans-serif">Kumushi Clusters</text>
+  <text x="275" y="93" font-size="11" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">One function at a time</text>
+  <text x="275" y="105" font-size="11" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Scoped edit region</text>
 
   <!-- Arrow -->
   <line x1="335" y1="85" x2="355" y2="85" stroke="#666" stroke-width="1.5" marker-end="url(#p-arr)"/>
 
   <!-- Claude LLM box -->
   <rect x="360" y="60" width="120" height="50" rx="4" fill="#fff3e0" stroke="#FF9800" stroke-width="1.5"/>
-  <text x="420" y="78" font-size="10" font-weight="600" text-anchor="middle" fill="#E65100" font-family="Inter, sans-serif">Claude 3.7 Sonnet</text>
-  <text x="420" y="93" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Code-only generation</text>
-  <text x="420" y="105" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">No root cause analysis</text>
+  <text x="420" y="78" font-size="12" font-weight="600" text-anchor="middle" fill="#E65100" font-family="Inter, sans-serif">Claude 3.7 Sonnet</text>
+  <text x="420" y="93" font-size="11" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Code-only generation</text>
+  <text x="420" y="105" font-size="11" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">No root cause analysis</text>
 
   <!-- Retry loop arrow (PatcherY) -->
   <path d="M 420,110 Q 420,140 340,140 Q 260,140 260,115" stroke="#D32F2F" stroke-width="1.5" fill="none" stroke-dasharray="4,3" marker-end="url(#p-arr-red)"/>
-  <text x="340" y="155" font-size="9" font-weight="600" fill="#D32F2F" text-anchor="middle" font-family="Inter, sans-serif">Iterative refinement (max 10)</text>
+  <text x="340" y="155" font-size="11" font-weight="600" fill="#D32F2F" text-anchor="middle" font-family="Inter, sans-serif">Iterative refinement (max 10)</text>
 
   <!-- ===== PATCHER Q (bottom) ===== -->
   <rect x="200" y="210" width="300" height="195" rx="10" fill="#fafafa" stroke="#9C27B0" stroke-width="2" filter="url(#p-shadow)"/>
@@ -63,27 +63,27 @@ title: "Patch Generation & Verification"
 
   <!-- Root Cause Agent -->
   <rect x="215" y="255" width="120" height="55" rx="4" fill="#fff" stroke="#9C27B0" stroke-width="1.5"/>
-  <text x="275" y="273" font-size="10" font-weight="600" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">Root Cause Agent</text>
-  <text x="275" y="288" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Multiple chains of</text>
-  <text x="275" y="300" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">thought (diverse models)</text>
+  <text x="275" y="273" font-size="12" font-weight="600" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">Root Cause Agent</text>
+  <text x="275" y="288" font-size="11" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Multiple chains of</text>
+  <text x="275" y="300" font-size="11" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">thought (diverse models)</text>
 
   <!-- Arrow -->
   <line x1="335" y1="282" x2="355" y2="282" stroke="#666" stroke-width="1.5" marker-end="url(#p-arr)"/>
 
   <!-- Programmer Agent -->
   <rect x="360" y="255" width="120" height="55" rx="4" fill="#f3e5f5" stroke="#9C27B0" stroke-width="1.5"/>
-  <text x="420" y="273" font-size="10" font-weight="600" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">Programmer Agent</text>
-  <text x="420" y="288" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Tool access: source</text>
-  <text x="420" y="300" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">search, file browse</text>
+  <text x="420" y="273" font-size="12" font-weight="600" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">Programmer Agent</text>
+  <text x="420" y="288" font-size="11" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Tool access: source</text>
+  <text x="420" y="300" font-size="11" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">search, file browse</text>
 
   <!-- CriticPass (PatcherQ only) -->
   <rect x="280" y="325" width="180" height="35" rx="4" fill="#fff" stroke="#9C27B0" stroke-width="1.5"/>
-  <text x="370" y="340" font-size="10" font-weight="600" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">CriticPass</text>
-  <text x="370" y="353" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">GPT-o3 review (no tool-calling)</text>
+  <text x="370" y="340" font-size="12" font-weight="600" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">CriticPass</text>
+  <text x="370" y="353" font-size="11" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">GPT-o3 review (no tool-calling)</text>
 
-  <!-- Feedback loop (PatcherQ) -->
-  <path d="M 420,310 Q 440,340 460,340 Q 480,340 480,370 Q 480,395 340,395 Q 215,395 215,315" stroke="#D32F2F" stroke-width="1.5" fill="none" stroke-dasharray="4,3" marker-end="url(#p-arr-red)"/>
-  <text x="350" y="395" font-size="9" font-weight="600" fill="#D32F2F" text-anchor="middle" font-family="Inter, sans-serif">Feedback loop</text>
+  <!-- Feedback loop (PatcherQ) — routes below CriticPass box -->
+  <path d="M 420,310 Q 440,330 460,365 Q 475,395 340,400 Q 215,400 215,315" stroke="#D32F2F" stroke-width="1.5" fill="none" stroke-dasharray="4,3" marker-end="url(#p-arr-red)"/>
+  <text x="350" y="398" font-size="11" font-weight="600" fill="#D32F2F" text-anchor="middle" font-family="Inter, sans-serif">Feedback loop</text>
 
   <!-- ===== MERGE ARROWS to Validator ===== -->
   <line x1="500" y1="90" x2="560" y2="180" stroke="#666" stroke-width="2" marker-end="url(#p-arr)"/>
@@ -97,32 +97,32 @@ title: "Patch Generation & Verification"
 
   <!-- Validation steps -->
   <rect x="585" y="148" width="180" height="24" rx="3" fill="#fff" stroke="#ddd" stroke-width="1"/>
-  <text x="590" y="164" font-size="9" fill="#333" font-family="Inter, sans-serif">1</text>
-  <text x="610" y="164" font-size="10" fill="#333" font-family="Inter, sans-serif">CompilerPass</text>
+  <text x="590" y="164" font-size="11" fill="#333" font-family="Inter, sans-serif">1</text>
+  <text x="610" y="164" font-size="12" fill="#333" font-family="Inter, sans-serif">CompilerPass</text>
 
   <rect x="585" y="178" width="180" height="24" rx="3" fill="#fff" stroke="#ddd" stroke-width="1"/>
-  <text x="590" y="194" font-size="9" fill="#333" font-family="Inter, sans-serif">2</text>
-  <text x="610" y="194" font-size="10" fill="#333" font-family="Inter, sans-serif">BuildCheckPass</text>
+  <text x="590" y="194" font-size="11" fill="#333" font-family="Inter, sans-serif">2</text>
+  <text x="610" y="194" font-size="12" fill="#333" font-family="Inter, sans-serif">BuildCheckPass</text>
 
   <rect x="585" y="208" width="180" height="24" rx="3" fill="#fff" stroke="#ddd" stroke-width="1"/>
-  <text x="590" y="224" font-size="9" fill="#333" font-family="Inter, sans-serif">3</text>
-  <text x="610" y="224" font-size="10" fill="#333" font-family="Inter, sans-serif">CrashPass (PoV regression)</text>
+  <text x="590" y="224" font-size="11" fill="#333" font-family="Inter, sans-serif">3</text>
+  <text x="610" y="224" font-size="12" fill="#333" font-family="Inter, sans-serif">CrashPass (PoV regression)</text>
 
   <rect x="585" y="238" width="180" height="24" rx="3" fill="#fff" stroke="#ddd" stroke-width="1"/>
-  <text x="590" y="254" font-size="9" fill="#333" font-family="Inter, sans-serif">4</text>
-  <text x="610" y="254" font-size="10" fill="#333" font-family="Inter, sans-serif">TestsPass</text>
+  <text x="590" y="254" font-size="11" fill="#333" font-family="Inter, sans-serif">4</text>
+  <text x="610" y="254" font-size="12" fill="#333" font-family="Inter, sans-serif">TestsPass</text>
 
   <rect x="585" y="268" width="180" height="24" rx="3" fill="#fff" stroke="#ddd" stroke-width="1"/>
-  <text x="590" y="284" font-size="9" fill="#333" font-family="Inter, sans-serif">5</text>
-  <text x="610" y="284" font-size="10" fill="#333" font-family="Inter, sans-serif">RegressionPass</text>
+  <text x="590" y="284" font-size="11" fill="#333" font-family="Inter, sans-serif">5</text>
+  <text x="610" y="284" font-size="12" fill="#333" font-family="Inter, sans-serif">RegressionPass</text>
 
   <rect x="585" y="298" width="180" height="24" rx="3" fill="#e8f5e9" stroke="#4CAF50" stroke-width="1"/>
-  <text x="590" y="314" font-size="9" fill="#333" font-family="Inter, sans-serif">6</text>
-  <text x="610" y="314" font-size="10" font-weight="600" fill="#2E7D32" font-family="Inter, sans-serif">FuzzPass (harness)</text>
+  <text x="590" y="314" font-size="11" fill="#333" font-family="Inter, sans-serif">6</text>
+  <text x="610" y="314" font-size="12" font-weight="600" fill="#2E7D32" font-family="Inter, sans-serif">FuzzPass (harness)</text>
 
   <rect x="585" y="328" width="180" height="24" rx="3" fill="#fff" stroke="#ddd" stroke-width="1"/>
-  <text x="590" y="344" font-size="9" fill="#333" font-family="Inter, sans-serif">7</text>
-  <text x="610" y="344" font-size="10" fill="#333" font-family="Inter, sans-serif">SanitizersPass</text>
+  <text x="590" y="344" font-size="11" fill="#333" font-family="Inter, sans-serif">7</text>
+  <text x="610" y="344" font-size="12" fill="#333" font-family="Inter, sans-serif">SanitizersPass</text>
 
   <!-- ===== ARROW to PatcherG ===== -->
   <line x1="785" y1="230" x2="830" y2="230" stroke="#8C1D40" stroke-width="2.5" marker-end="url(#p-arr-maroon)"/>
@@ -135,31 +135,31 @@ title: "Patch Generation & Verification"
 
   <!-- Gate icon -->
   <rect x="870" y="205" width="60" height="40" rx="4" fill="#fff" stroke="#4CAF50" stroke-width="1.5"/>
-  <text x="900" y="222" font-size="10" font-weight="600" text-anchor="middle" fill="#2E7D32" font-family="Inter, sans-serif">Dedup</text>
-  <text x="900" y="236" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Gate</text>
+  <text x="900" y="222" font-size="12" font-weight="600" text-anchor="middle" fill="#2E7D32" font-family="Inter, sans-serif">Dedup</text>
+  <text x="900" y="236" font-size="11" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">Gate</text>
 
-  <text x="900" y="270" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">One patch per bug</text>
-  <text x="900" y="284" font-size="9" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">First valid wins</text>
+  <text x="900" y="270" font-size="11" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">One patch per bug</text>
+  <text x="900" y="284" font-size="11" text-anchor="middle" fill="#666" font-family="Inter, sans-serif">First valid wins</text>
 
   <!-- ===== OUTPUT arrow ===== -->
   <line x1="965" y1="230" x2="1010" y2="230" stroke="#8C1D40" stroke-width="2.5" marker-end="url(#p-arr-maroon)"/>
 
   <!-- Submitted Patch -->
   <rect x="1015" y="200" width="70" height="60" rx="6" fill="#8C1D40" filter="url(#p-shadow)"/>
-  <text x="1050" y="228" font-size="10" font-weight="700" text-anchor="middle" fill="#FFD700" font-family="Inter, sans-serif">Submitted</text>
-  <text x="1050" y="244" font-size="10" font-weight="700" text-anchor="middle" fill="#FFD700" font-family="Inter, sans-serif">Patch</text>
+  <text x="1050" y="228" font-size="12" font-weight="700" text-anchor="middle" fill="#FFD700" font-family="Inter, sans-serif">Submitted</text>
+  <text x="1050" y="244" font-size="12" font-weight="700" text-anchor="middle" fill="#FFD700" font-family="Inter, sans-serif">Patch</text>
 
   <!-- ===== BOTTOM: Key stats ===== -->
   <line x1="50" y1="430" x2="1060" y2="430" stroke="#e0e0e0" stroke-width="1"/>
 
   <rect x="100" y="445" width="250" height="28" rx="4" fill="#fff3e0"/>
-  <text x="225" y="464" font-size="11" font-weight="600" text-anchor="middle" fill="#E65100" font-family="Inter, sans-serif">PatcherY: fast, scoped, deterministic</text>
+  <text x="225" y="464" font-size="13" font-weight="600" text-anchor="middle" fill="#E65100" font-family="Inter, sans-serif">PatcherY: fast, scoped, deterministic</text>
 
   <rect x="420" y="445" width="250" height="28" rx="4" fill="#f3e5f5"/>
-  <text x="545" y="464" font-size="11" font-weight="600" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">PatcherQ: creative, multi-model, agentic</text>
+  <text x="545" y="464" font-size="13" font-weight="600" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">PatcherQ: creative, multi-model, agentic</text>
 
   <rect x="740" y="445" width="250" height="28" rx="4" fill="#e8f5e9"/>
-  <text x="865" y="464" font-size="11" font-weight="600" text-anchor="middle" fill="#2E7D32" font-family="Inter, sans-serif">Race condition: best patch wins</text>
+  <text x="865" y="464" font-size="13" font-weight="600" text-anchor="middle" fill="#2E7D32" font-family="Inter, sans-serif">Race condition: best patch wins</text>
 
 </svg>
 
