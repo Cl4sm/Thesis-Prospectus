@@ -131,6 +131,15 @@ def parse_slide(filepath):
         body, notes = body.split('\n???\n', 1)
         body = body.strip()
         notes = notes.strip()
+    elif body.startswith('???\n') or body == '???':
+        # Handle case where ??? is at the very start of body (after strip)
+        if body == '???':
+            body = ''
+            notes = ''
+        else:
+            notes = body[4:]  # skip '???\n'
+            body = ''
+            notes = notes.strip()
 
     # Protect raw HTML/SVG blocks from markdown mangling
     body, placeholders = protect_html_blocks(body)
