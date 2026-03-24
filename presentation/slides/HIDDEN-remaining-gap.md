@@ -1,6 +1,7 @@
 ---
 type: content
 title: "The Remaining Gap"
+hidden: true
 ---
 
 <svg viewBox="0 0 1050 420" style="width:100%; margin:0 auto; display:block;" xmlns="http://www.w3.org/2000/svg">
@@ -9,8 +10,6 @@ title: "The Remaining Gap"
       <polygon points="0 0, 10 4, 0 8" fill="#8C1D40"/>
     </marker>
   </defs>
-
-  <g transform="translate(0, 50)">
 
   <!-- Mango Card (left) -->
   <rect x="40" y="20" width="390" height="200" rx="10" fill="#FFF8E1" stroke="#FF9800" stroke-width="2.5"/>
@@ -29,7 +28,7 @@ title: "The Remaining Gap"
   <text x="110" y="161" font-size="15" fill="#333" font-family="Inter, sans-serif">Candidates unvalidated</text>
 
   <!-- Mango: stat -->
-  <text x="235" y="205" font-size="15" text-anchor="middle" fill="#777" font-family="Inter, sans-serif">no proof of reachability</text>
+  <text x="235" y="205" font-size="13" text-anchor="middle" fill="#777" font-family="Inter, sans-serif">10,834 alerts, no proof of reachability</text>
 
   <!-- Artiphishell Card (right) -->
   <rect x="620" y="20" width="390" height="200" rx="10" fill="#F3E5F5" stroke="#7B1FA2" stroke-width="2.5"/>
@@ -48,15 +47,14 @@ title: "The Remaining Gap"
   <text x="690" y="161" font-size="15" fill="#333" font-family="Inter, sans-serif">Requires source code</text>
 
   <!-- Artiphishell: stat -->
-  <text x="815" y="205" font-size="15" text-anchor="middle" fill="#777" font-family="Inter, sans-serif">Full pipeline, but only with symbols and types</text>
+  <text x="815" y="205" font-size="13" text-anchor="middle" fill="#777" font-family="Inter, sans-serif">Full pipeline, but only with symbols and types</text>
 
   <!-- Center gap visual -->
   <line x1="525" y1="50" x2="525" y2="195" stroke="#ccc" stroke-width="1.5" stroke-dasharray="6,4"/>
-  <text x="525" y="250" font-size="16" font-weight="600" text-anchor="middle" fill="#777" font-family="Inter, sans-serif">THE GAP</text>
-  </g>
+  <text x="525" y="250" font-size="14" font-weight="600" text-anchor="middle" fill="#777" font-family="Inter, sans-serif">THE GAP</text>
 
 </svg>
 
 ???
 
-Here is the high-level tension driving this dissertation. On the left, Mango scales detection to every binary in a firmware image, but its outputs are unvalidated candidates. On the right, Artiphishell demonstrates that the full vulnerability lifecycle works autonomously, but it requires source code and substantial compute. The gap between them defines the proposed work: how do we produce concrete triggering inputs for binary-only firmware without source code, types, or symbols? Each project addresses a different piece of that puzzle. Let me walk through them.
+On the left, Mango gives us scalable binary-only detection but no proof of reachability. On the right, Artiphishell proves the full lifecycle works but only with source code. The gap sits between them: thousands of binary-only alerts with no concrete evidence of exploitability. The gap: how do we validate Mango's candidates on firmware when the only view available is stripped machine code, with no types, no symbols, no call graphs? That is the motivation for the proposed work.

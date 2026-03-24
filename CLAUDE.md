@@ -14,11 +14,11 @@ Adil Ahmad - Member
 
 ## Thesis Structure
 
-The dissertation ties together three projects under the theme of leveraging practitioner knowledge for scalable and autonomous vulnerability discovery. The central argument: skilled analysts find vulnerabilities through specific forms of reasoning (value-level judgment, multi-technique workflows, path feasibility intuition) that current automated tools discard. Each project encodes a different form of practitioner knowledge into an automated system.
+The dissertation ties together three projects under the theme of leveraging practitioner knowledge for scalable and autonomous vulnerability discovery. The central argument: complete, accurate, and scalable vulnerability analysis is achievable by composing specialized tools in a staged pipeline where each stage compensates the weaknesses of others.
 
-1. **Operation Mango** (completed, published USENIX Security '24) — encodes value-level reasoning. Rich Expressions track transformation history (not just taint bits), capturing the same judgment a human analyst applies when tracing data flows from source to sink. The published paper is `mango_usenix24.pdf`; source materials are in `mango-paper/`.
-2. **Artiphishell** (completed, DEF CON 2025) — encodes multi-technique workflow knowledge. Autonomous CRS for DARPA AIxCC where fuzzing, LLM scanning, root-cause analysis, and patching coordinate through a shared Analysis Graph, mirroring how experienced security teams cross-reference independent techniques. The published paper is `Artiphishell.pdf`. **Wil led the project but did not write the paper; all prospectus content must be original.**
-3. **Proposed work: Symbolic Execution on AIL** (working title "full-reach") — encodes path feasibility reasoning. Symbolic execution on angr's AIL intermediate language to validate MangoDFA's static candidates with concrete triggering inputs, automating the mental simulation practitioners perform when assessing whether a flagged path is reachable.
+1. **Operation Mango** (completed, published USENIX Security '24) — handles the detection stage. Rich Expressions track transformation history (not just taint bits), capturing the same judgment a human analyst applies when tracing data flows from source to sink. The published paper is `mango_usenix24.pdf`; source materials are in `mango-paper/`.
+2. **Artiphishell** (completed, DEF CON 2025) — handles the validation stage. Autonomous CRS for DARPA AIxCC where fuzzing, LLM scanning, root-cause analysis, and patching coordinate through a shared Analysis Graph, mirroring how experienced security teams cross-reference independent techniques. The published paper is `Artiphishell.pdf`. **Wil led the project but did not write the paper; all prospectus content must be original.**
+3. **Proposed work: Symbolic Execution on AIL** (working title "full-reach") — handles the confirmation stage. Symbolic execution on angr's AIL intermediate language to validate MangoDFA's static candidates with concrete triggering inputs, automating the mental simulation practitioners perform when assessing whether a flagged path is reachable.
 
 ## Build Commands
 

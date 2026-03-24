@@ -224,22 +224,22 @@
 
         /* Cover slide body overrides */
         .cover-body h1 {
-            font-size: clamp(2.8rem, 6vw, 4.5rem);
-            margin-bottom: 1rem;
+            font-size: clamp(2.2rem, 5vw, 3.5rem);
+            margin-bottom: 0.75rem;
         }
         .cover-body h2 {
-            font-size: clamp(2.4rem, 5vw, 3.8rem);
+            font-size: clamp(1.5rem, 3vw, 2.2rem);
             font-weight: 400;
             color: #555;
             margin-bottom: 2rem;
         }
         .cover-body p {
-            font-size: clamp(1.6rem, 3vw, 2.2rem);
+            font-size: clamp(1rem, 1.8vw, 1.3rem);
             color: #444;
             margin-bottom: 0.3rem;
         }
         .cover-body strong {
-            font-size: clamp(1.4rem, 2.5vw, 2rem);
+            font-size: clamp(1.2rem, 2.2vw, 1.6rem);
             display: block;
             margin-bottom: 1rem;
         }
@@ -357,24 +357,6 @@
         let presenterWin = null;
         let presenterTimerInterval = null;
 
-        // Restore slide position from URL hash on load
-        (function restoreFromHash() {
-            const m = location.hash.match(/^#slide-(\d+)$/);
-            if (m) {
-                const idx = parseInt(m[1], 10) - 1;
-                if (idx >= 0 && idx < slides.length) {
-                    current = idx;
-                    container.style.scrollSnapType = 'none';
-                    container.scrollTop = idx * container.clientHeight;
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            container.style.scrollSnapType = 'y mandatory';
-                        });
-                    });
-                }
-            }
-        })();
-
         // === Animation step controller ===
         function resetSlideAnim(idx) {
             const a = window.slideAnimations[idx];
@@ -419,8 +401,6 @@
             } else {
                 snEl.textContent = current + 1;
             }
-            // Persist current slide in URL hash so refresh returns here
-            history.replaceState(null, '', '#slide-' + (current + 1));
             if (presenterWin && !presenterWin.closed) {
                 sendPresenterUpdate();
             }

@@ -1,11 +1,11 @@
 ---
 type: section
-label: "Proposed Work"
+label: "Chapter 3"
 title: "PEACH"
 ---
 
-Automated Validation of Static Vulnerability Candidates Through Directed Symbolic Execution
+Automated Validation Through Directed Symbolic Execution
 
 ???
 
-The proposed work addresses this directly. We're building a system that takes those static candidates from Mango, and validates them, proving whether each one is actually reachable or unreachable with concrete evidence.
+The proposed work addresses this directly. We're building a system that takes static analysis candidates and validates them, proving whether each one is actually reachable or unreachable with concrete evidence.
