@@ -1,10 +1,12 @@
 {# Section divider — maroon background, centered white text #}
+{# Optional textScale (default 1) multiplies all font sizes #}
+{% set ts = slide.textScale | default(1) %}
 <div class="slide flex flex-col items-center justify-center text-center px-12 bg-maroon" id="slide-{{ slide._index }}">
     {% if slide.label %}
-    <p class="text-3xl md:text-4xl text-white/50 uppercase tracking-widest mb-4">{{ slide.label }}</p>
+    <p class="text-white/50 uppercase tracking-widest mb-4" style="font-size: clamp({{ 1.875 * ts }}rem, {{ 3.5 * ts }}vw, {{ 2.25 * ts }}rem);">{{ slide.label }}</p>
     {% endif %}
-    <h2 class="font-bold text-white mb-6" style="font-size: clamp(4rem, 8vw, 7rem);">{{ slide.title }}</h2>
-    <div class="slide-body section-body text-white/70 max-w-[80%]" style="font-size: clamp(2.5rem, 5vw, 3.8rem);">
+    <h2 class="font-bold text-white mb-6" style="font-size: clamp({{ 4 * ts }}rem, {{ 8 * ts }}vw, {{ 7 * ts }}rem);">{{ slide.title | safe }}</h2>
+    <div class="slide-body section-body text-white/70 max-w-[80%]" style="font-size: clamp({{ 2.5 * ts }}rem, {{ 5 * ts }}vw, {{ 3.8 * ts }}rem);">
         {{ slide.body_html | safe }}
     </div>
 </div>

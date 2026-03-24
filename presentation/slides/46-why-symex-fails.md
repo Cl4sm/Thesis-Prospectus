@@ -140,11 +140,6 @@ title: "Why Conventional Symbolic Execution Fails"
     <text x="80" y="368" font-size="12.5" fill="#666" font-family="Inter, sans-serif">Auth, format parsing, and permission checks must be satisfied symbolically</text>
   </g>
 
-  <!-- Bottom note -->
-  <g id="ws-note" style="opacity:0;">
-    <text x="350" y="415" text-anchor="middle" font-size="14" font-weight="700" fill="#8C1D40" font-family="Inter,sans-serif">Our proposed work addresses each with three targeted design choices.</text>
-  </g>
-
 </svg>
 </div>
 

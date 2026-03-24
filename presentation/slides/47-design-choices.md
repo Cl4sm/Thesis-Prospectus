@@ -14,11 +14,11 @@ title: "Three Key Design Choices"
   </defs>
 
   <!-- ===== PANEL 1: AIL-Level Execution ===== -->
-  <rect x="15" y="10" width="320" height="440" rx="10" fill="#fafafa" stroke="#2196F3" stroke-width="2"/>
   <rect x="15" y="10" width="320" height="42" rx="10" fill="#e3f2fd"/>
   <rect x="15" y="42" width="320" height="10" fill="#e3f2fd"/>
-  <circle cx="35" cy="25" r="14" fill="#1565C0"/>
-  <text x="35" y="30" font-size="15.2" font-weight="800" text-anchor="middle" fill="white" font-family="Inter, sans-serif">1</text>
+  <rect x="15" y="10" width="320" height="440" rx="10" fill="#fafafa00" stroke="#2196F3" stroke-width="2"/>
+  <circle cx="35" cy="33" r="14" fill="#1565C0"/>
+  <text x="35" y="38" font-size="15.2" font-weight="800" text-anchor="middle" fill="white" font-family="Inter, sans-serif">1</text>
   <text x="58" y="38" font-size="17.5" font-weight="700" fill="#1565C0" font-family="Inter, sans-serif">AIL-Level Execution</text>
 
   <!-- VEX side (complex) -->
@@ -58,11 +58,11 @@ title: "Three Key Design Choices"
   <text x="175" y="339" font-size="13" font-weight="600" text-anchor="middle" fill="#2E7D32" font-family="Inter, sans-serif">Tighter SMT constraints, fewer artifacts</text>
 
   <!-- ===== PANEL 2: Hybrid Concretization ===== -->
-  <rect x="365" y="10" width="320" height="440" rx="10" fill="#fafafa" stroke="#FF9800" stroke-width="2"/>
   <rect x="365" y="10" width="320" height="42" rx="10" fill="#fff3e0"/>
   <rect x="365" y="42" width="320" height="10" fill="#fff3e0"/>
-  <circle cx="385" cy="25" r="14" fill="#E65100"/>
-  <text x="385" y="30" font-size="15.2" font-weight="800" text-anchor="middle" fill="white" font-family="Inter, sans-serif">2</text>
+  <rect x="365" y="10" width="320" height="440" rx="10" fill="#fafafa00" stroke="#FF9800" stroke-width="2"/>
+  <circle cx="385" cy="33" r="14" fill="#E65100"/>
+  <text x="385" y="38" font-size="15.2" font-weight="800" text-anchor="middle" fill="white" font-family="Inter, sans-serif">2</text>
   <text x="408" y="38" font-size="17.5" font-weight="700" fill="#E65100" font-family="Inter, sans-serif">Hybrid Concretization</text>
 
   <!-- Static extraction box -->
@@ -103,11 +103,11 @@ title: "Three Key Design Choices"
   <text x="525" y="381" font-size="13" font-weight="600" text-anchor="middle" fill="#2E7D32" font-family="Inter, sans-serif">LLM values verified against constraints</text>
 
   <!-- ===== PANEL 3: Cross-Binary Constraint Chaining ===== -->
-  <rect x="715" y="10" width="320" height="440" rx="10" fill="#fafafa" stroke="#8C1D40" stroke-width="2"/>
   <rect x="715" y="10" width="320" height="42" rx="10" fill="#F8EEF1"/>
   <rect x="715" y="42" width="320" height="10" fill="#F8EEF1"/>
-  <circle cx="735" cy="25" r="14" fill="#8C1D40"/>
-  <text x="735" y="30" font-size="15.2" font-weight="800" text-anchor="middle" fill="white" font-family="Inter, sans-serif">3</text>
+  <rect x="715" y="10" width="320" height="440" rx="10" fill="#fafafa00" stroke="#8C1D40" stroke-width="2"/>
+  <circle cx="735" cy="33" r="14" fill="#8C1D40"/>
+  <text x="735" y="38" font-size="15.2" font-weight="800" text-anchor="middle" fill="white" font-family="Inter, sans-serif">3</text>
   <text x="758" y="38" font-size="17.5" font-weight="700" fill="#8C1D40" font-family="Inter, sans-serif">Cross-Binary Chaining</text>
 
   <!-- Binary A (setter) -->

@@ -1,9 +1,10 @@
 ---
 type: section
 title: "Artiphishell"
+textScale: 2
 ---
 
-DARPA AI Cyber Challenge's Cyber Reasoning System for team Shellphish
+Team Shellphish's AIxCC Cyber Reasoning System
 
 <img src="presentation/figures/artiphishell_logo.png" style="position:absolute; bottom:70px; right:50px; width:380px; opacity:0.2; pointer-events:none;"/>
 

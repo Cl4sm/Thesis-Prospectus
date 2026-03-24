@@ -2,6 +2,7 @@
 type: content
 title: "Scalability Has Two Dimensions"
 footnote: "[1] SaTC (USENIX Sec '21)&emsp;[2] Fang et al., arXiv 2404.08144&emsp;[3] Google Project Zero / DeepMind, 'Big Sleep' (2024)&emsp;[4] OpenSSF, CVE-2024-3094"
+hidden: True
 ---
 
 <svg id="depth-diagram" viewBox="0 0 1100 480" style="width:100%; height:auto; display:block; margin:0 auto;" xmlns="http://www.w3.org/2000/svg">

@@ -21,7 +21,6 @@ title: "Thesis Contributions"
   <text x="175" y="170" text-anchor="middle" font-size="25.7" fill="#FF9800" font-weight="700">22x</text>
   <text x="175" y="190" text-anchor="middle" font-size="14" fill="#666">more binaries than prior work</text>
   <text x="175" y="220" text-anchor="middle" font-size="15.2" fill="#FF9800" font-weight="600">166 exploitable vulnerabilities</text>
-  <text x="175" y="238" text-anchor="middle" font-size="15.2" fill="#999">Published, peer-reviewed</text>
 
   <!-- Arrow 1→2 -->
   <path d="M 330 135 L 360 135" stroke="#555" stroke-width="2.5" fill="none" marker-end="url(#arrContrib)"/>
@@ -37,7 +36,6 @@ title: "Thesis Contributions"
   <text x="520" y="170" text-anchor="middle" font-size="25.7" fill="#9C27B0" font-weight="700">7 Zero-Days</text>
   <text x="520" y="190" text-anchor="middle" font-size="14" fill="#666">in real open-source projects</text>
   <text x="520" y="220" text-anchor="middle" font-size="15.2" fill="#9C27B0" font-weight="600">143 hours, zero human input</text>
-  <text x="520" y="238" text-anchor="middle" font-size="15.2" fill="#999">Completed, presented</text>
 
   <!-- Arrow 2→3 -->
   <path d="M 675 135 L 705 135" stroke="#555" stroke-width="2.5" fill="none" marker-end="url(#arrContrib)"/>
@@ -50,10 +48,9 @@ title: "Thesis Contributions"
   <text x="865" y="86" text-anchor="middle" font-size="14" fill="#888">Proposed Work</text>
   <text x="865" y="118" text-anchor="middle" font-size="16.3" fill="#333" font-weight="600">Bridges the detection gap</text>
   <text x="865" y="138" text-anchor="middle" font-size="16.3" fill="#333" font-weight="600">with concrete triggering inputs</text>
-  <text x="865" y="170" text-anchor="middle" font-size="25.7" fill="#2196F3" font-weight="700">1 Zero-Day</text>
-  <text x="865" y="190" text-anchor="middle" font-size="14" fill="#666">already discovered (preliminary)</text>
+  <!-- <text x="865" y="170" text-anchor="middle" font-size="25.7" fill="#2196F3" font-weight="700">1 Zero-Day</text> -->
+  <!-- <text x="865" y="190" text-anchor="middle" font-size="14" fill="#666">already discovered (preliminary)</text> -->
   <text x="865" y="220" text-anchor="middle" font-size="15.2" fill="#2196F3" font-weight="600">Formal validation of static alerts</text>
-  <text x="865" y="238" text-anchor="middle" font-size="15.2" fill="#999">Proposed, preliminary results</text>
 
   <!-- Progression bar -->
   <rect x="20" y="280" width="1000" height="36" fill="#f5f5f5" rx="18"/>
@@ -61,16 +58,13 @@ title: "Thesis Contributions"
   <rect x="350" y="280" width="330" height="36" fill="#F3E5F5"/>
   <rect x="680" y="280" width="340" height="36" fill="#E3F2FD" rx="18"/>
 
-  <text x="185" y="303" text-anchor="middle" font-size="15.2" font-weight="700" fill="#E65100">Scan everything</text>
+  <text x="185" y="303" text-anchor="middle" font-size="15.2" font-weight="700" fill="#E65100">Scale Analysis</text>
   <text x="515" y="303" text-anchor="middle" font-size="15.2" font-weight="700" fill="#7B1FA2">Coordinate techniques</text>
   <text x="850" y="303" text-anchor="middle" font-size="15.2" font-weight="700" fill="#1565C0">Prove exploitability</text>
 
   <path d="M 340 298 L 360 298" stroke="#888" stroke-width="2.5" fill="none" marker-end="url(#arrContrib)"/>
   <path d="M 670 298 L 690 298" stroke="#888" stroke-width="2.5" fill="none" marker-end="url(#arrContrib)"/>
 
-  <!-- Bottom thesis statement -->
-  <text x="525" y="350" text-anchor="middle" font-size="17.5" fill="#333" font-weight="600">Together: a path from "scan everything" to "prove exploitability"</text>
-  <text x="525" y="372" text-anchor="middle" font-size="14" fill="#888">Detection, coordination, and proof: a complete analysis pipeline</text>
 </svg>
 
 ???

@@ -1,7 +1,7 @@
 ---
 type: section
-label: "Chapter 3"
 title: "PEACH"
+textScale: 2
 ---
 
 Automated Validation Through Directed Symbolic Execution

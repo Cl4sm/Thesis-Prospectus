@@ -1,15 +1,14 @@
 ---
 type: content
 title: "Planned Evaluation"
-hidden: true
 ---
 
 <svg viewBox="0 0 1050 440" style="width:100%; display:block; margin: 0 auto;" xmlns="http://www.w3.org/2000/svg">
 
   <!-- ===== Experiment 1 ===== -->
-  <rect x="15" y="15" width="490" height="190" rx="10" fill="#fafafa" stroke="#2196F3" stroke-width="2"/>
   <rect x="15" y="15" width="490" height="40" rx="10" fill="#e3f2fd"/>
   <rect x="15" y="45" width="490" height="10" fill="#e3f2fd"/>
+  <rect x="15" y="15" width="490" height="190" rx="10" fill="#fafafa00" stroke="#2196F3" stroke-width="2"/>
   <text x="35" y="42" font-size="13" font-weight="700" fill="#1565C0" font-family="Inter, sans-serif">Experiment 1: Multi-Firmware Effectiveness</text>
 
   <!-- Firmware icons row -->
@@ -35,9 +34,9 @@ hidden: true
   <text x="40" y="186" font-size="11" font-weight="600" fill="#1565C0" font-family="Inter, sans-serif">Goal: demonstrate generalization beyond single target</text>
 
   <!-- ===== Experiment 2 ===== -->
-  <rect x="535" y="15" width="490" height="190" rx="10" fill="#fafafa" stroke="#FF9800" stroke-width="2"/>
   <rect x="535" y="15" width="490" height="40" rx="10" fill="#fff3e0"/>
   <rect x="535" y="45" width="490" height="10" fill="#fff3e0"/>
+  <rect x="535" y="15" width="490" height="190" rx="10" fill="#fafafa00" stroke="#FF9800" stroke-width="2"/>
   <text x="555" y="42" font-size="13" font-weight="700" fill="#E65100" font-family="Inter, sans-serif">Experiment 2: Static Analysis Verification</text>
 
   <!-- Tool boxes -->
@@ -63,9 +62,9 @@ hidden: true
   <text x="560" y="198" font-size="11" font-weight="600" fill="#E65100" font-family="Inter, sans-serif">Goal: tool-agnostic validation</text>
 
   <!-- ===== Experiment 3 ===== -->
-  <rect x="15" y="230" width="490" height="190" rx="10" fill="#fafafa" stroke="#9C27B0" stroke-width="2"/>
   <rect x="15" y="230" width="490" height="40" rx="10" fill="#f3e5f5"/>
   <rect x="15" y="260" width="490" height="10" fill="#f3e5f5"/>
+  <rect x="15" y="230" width="490" height="190" rx="10" fill="#fafafa00" stroke="#9C27B0" stroke-width="2"/>
   <text x="35" y="257" font-size="13" font-weight="700" fill="#7B1FA2" font-family="Inter, sans-serif">Experiment 3: LLM Ablation Study</text>
 
   <!-- Two columns: with LLM vs without -->
@@ -88,36 +87,47 @@ hidden: true
   <!-- Description -->
   <text x="40" y="400" font-size="11" font-weight="600" fill="#7B1FA2" font-family="Inter, sans-serif">Goal: quantify LLM contribution vs. cost</text>
 
-  <!-- ===== Extension ===== -->
-  <rect x="535" y="230" width="490" height="190" rx="10" fill="#fafafa" stroke="#4CAF50" stroke-width="2"/>
-  <rect x="535" y="230" width="490" height="40" rx="10" fill="#e8f5e9"/>
-  <rect x="535" y="260" width="490" height="10" fill="#e8f5e9"/>
-  <text x="555" y="257" font-size="13" font-weight="700" fill="#2E7D32" font-family="Inter, sans-serif">Extension: Beyond Command Injection</text>
+  <!-- ===== PEACH Branding ===== -->
+  <rect x="535" y="230" width="490" height="190" rx="14" fill="#fdf6f0" stroke="#e8c4a0" stroke-width="1.5" stroke-dasharray="6,4"/>
 
-  <!-- Vulnerability type boxes -->
-  <rect x="560" y="285" width="160" height="55" rx="6" fill="#fff" stroke="#FF9800" stroke-width="1.5"/>
-  <text x="640" y="307" font-size="11" font-weight="700" text-anchor="middle" fill="#E65100" font-family="Inter, sans-serif">Command Injection</text>
-  <text x="640" y="325" font-size="10" text-anchor="middle" fill="#999" font-family="Inter, sans-serif">Current target (validated)</text>
+  <!-- SVG Peach fruit -->
+  <g transform="translate(690, 270)">
+    <!-- Leaf -->
+    <ellipse cx="12" cy="-8" rx="14" ry="6" fill="#66BB6A" transform="rotate(-30 12 -8)"/>
+    <line x1="0" y1="0" x2="12" y2="-8" stroke="#43A047" stroke-width="2" stroke-linecap="round"/>
+    <!-- Peach body -->
+    <ellipse cx="0" cy="18" rx="28" ry="26" fill="#FFAB91"/>
+    <ellipse cx="-6" cy="14" rx="18" ry="20" fill="#FF8A65" opacity="0.5"/>
+    <!-- Crease -->
+    <path d="M 0,-8 Q -4,18 0,44" stroke="#E64A19" stroke-width="1.5" fill="none" opacity="0.4"/>
+    <!-- Highlight -->
+    <ellipse cx="10" cy="8" rx="8" ry="10" fill="#FFCCBC" opacity="0.5"/>
+  </g>
 
-  <text x="740" y="315" font-size="16" font-weight="700" fill="#555" font-family="Inter, sans-serif">→</text>
+  <!-- SVG Lab flask -->
+  <g transform="translate(830, 268)">
+    <!-- Flask neck -->
+    <rect x="-6" y="-10" width="12" height="18" rx="2" fill="#e0e0e0" stroke="#999" stroke-width="1.2"/>
+    <!-- Flask body -->
+    <path d="M -6,8 L -22,36 Q -24,42 -18,44 L 18,44 Q 24,42 22,36 L 6,8 Z" fill="#e3f2fd" stroke="#999" stroke-width="1.2"/>
+    <!-- Liquid -->
+    <path d="M -16,30 Q -18,42 -14,42 L 14,42 Q 18,42 16,30 Z" fill="#81D4FA" opacity="0.7"/>
+    <!-- Bubbles -->
+    <circle cx="-4" cy="34" r="2.5" fill="#B3E5FC"/>
+    <circle cx="6" cy="30" r="1.8" fill="#B3E5FC"/>
+    <!-- Cork/rim -->
+    <rect x="-8" y="-12" width="16" height="4" rx="1" fill="#bdbdbd" stroke="#999" stroke-width="0.8"/>
+  </g>
 
-  <rect x="770" y="285" width="160" height="55" rx="6" fill="#fff" stroke="#4CAF50" stroke-width="2"/>
-  <text x="850" y="307" font-size="11" font-weight="700" text-anchor="middle" fill="#2E7D32" font-family="Inter, sans-serif">Buffer Overflow</text>
-  <text x="850" y="325" font-size="10" text-anchor="middle" fill="#4CAF50" font-weight="600" font-family="Inter, sans-serif">Proposed extension</text>
-
-  <!-- Description -->
-  <text x="560" y="370" font-size="11" fill="#555" font-family="Inter, sans-serif">Demonstrate the approach generalizes across vulnerability classes.</text>
-  <text x="560" y="388" font-size="11" fill="#555" font-family="Inter, sans-serif">Buffer overflows require length-tracking, not value-tracking.</text>
-  <text x="560" y="406" font-size="11" font-weight="600" fill="#2E7D32" font-family="Inter, sans-serif">Goal: vulnerability-class agnostic validation</text>
+  <text x="770" y="370" font-size="20" font-weight="700" text-anchor="middle" fill="#8C1D40" font-family="Inter, sans-serif">PEACH Experiments</text>
+  <text x="770" y="393" font-size="13" text-anchor="middle" fill="#999" font-family="Inter, sans-serif">Proposed evaluation plan</text>
 
 </svg>
 
 ???
 
-The planned evaluation has four parts. First, we expand to multiple firmware images from different vendors: TP-Link, D-Link, others. This shows the approach generalizes beyond the R6400. We follow responsible disclosure throughout.
+The planned evaluation has three parts. First, we expand to multiple firmware images from different vendors: TP-Link, D-Link, others. This shows the approach generalizes beyond the R6400. We follow responsible disclosure throughout.
 
 Second, we test the normalization layer against multiple static analyzers. Not just Mango, but SaTC and Karonte as well. This demonstrates that the system works with different upstream tools, not just one.
 
 Third, we run an ablation study. We disable the LLM-directed concretization and re-run the validation. This shows how much the LLM contribution matters, and allows us to quantify the benefit versus the cost of running the LLM.
-
-Fourth, we extend the validation beyond command injection to buffer overflows. This shows the approach is not specific to one vulnerability class.

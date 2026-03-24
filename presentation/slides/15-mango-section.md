@@ -1,11 +1,12 @@
 ---
 type: section
-title: "Operation Mango"
+title: 'Operation Mango<sup style="font-size:0.4em; vertical-align:super; font-weight:400;">[1]</sup>'
+textScale: 2
 ---
 
 Scalable Discovery of Taint-Style Vulnerabilities in Binary Firmware Services
 
-<div style="margin-top:12px; font-size:28px; color:#888; font-family:Inter,sans-serif;">Gibbs et al., USENIX Security '24</div>
+<div style="position:absolute; bottom:30px; left:60px; font-size:1.4rem; color:rgba(255,255,255,0.75); font-family:Inter,sans-serif;">[1] Gibbs et al., USENIX Security '24</div>
 
 ???
 

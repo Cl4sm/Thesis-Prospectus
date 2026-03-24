@@ -14,7 +14,7 @@ title: "System Architecture"
   </defs>
 
   <!-- ===== PEACH system dashed border ===== -->
-  <rect x="198" y="55" width="770" height="160" fill="none" stroke="#9C27B0" stroke-width="2" stroke-dasharray="5,4" rx="8" opacity="0.5"/>
+  <rect x="198" y="55" width="785" height="160" fill="none" stroke="#9C27B0" stroke-width="2" stroke-dasharray="5,4" rx="8" opacity="0.5"/>
   <text x="215" y="50" font-size="14" fill="#9C27B0" font-style="italic" font-weight="600">PEACH system</text>
 
   <!-- ===== Stage 0: Input (external) ===== -->
