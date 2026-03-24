@@ -39,27 +39,27 @@ title: "Planned Evaluation"
   <rect x="535" y="15" width="490" height="190" rx="10" fill="#fafafa00" stroke="#FF9800" stroke-width="2"/>
   <text x="555" y="42" font-size="13" font-weight="700" fill="#E65100" font-family="Inter, sans-serif">Experiment 2: Static Analysis Verification</text>
 
-  <!-- Tool boxes -->
-  <rect x="560" y="70" width="100" height="45" rx="4" fill="#fff3e0" stroke="#FF9800" stroke-width="1.5"/>
-  <text x="610" y="97" font-size="11" font-weight="600" text-anchor="middle" fill="#E65100" font-family="Inter, sans-serif">Mango</text>
+  <!-- Tool boxes (centered in panel: center=780) -->
+  <rect x="615" y="70" width="100" height="45" rx="4" fill="#fff3e0" stroke="#FF9800" stroke-width="1.5"/>
+  <text x="665" y="97" font-size="11" font-weight="600" text-anchor="middle" fill="#E65100" font-family="Inter, sans-serif">Mango</text>
 
-  <rect x="675" y="70" width="100" height="45" rx="4" fill="#e3f2fd" stroke="#2196F3" stroke-width="1.5"/>
-  <text x="725" y="97" font-size="11" font-weight="600" text-anchor="middle" fill="#1565C0" font-family="Inter, sans-serif">SaTC</text>
+  <rect x="730" y="70" width="100" height="45" rx="4" fill="#e3f2fd" stroke="#2196F3" stroke-width="1.5"/>
+  <text x="780" y="97" font-size="11" font-weight="600" text-anchor="middle" fill="#1565C0" font-family="Inter, sans-serif">SaTC</text>
 
-  <rect x="790" y="70" width="100" height="45" rx="4" fill="#f3e5f5" stroke="#9C27B0" stroke-width="1.5"/>
-  <text x="840" y="97" font-size="11" font-weight="600" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">Karonte</text>
+  <rect x="845" y="70" width="100" height="45" rx="4" fill="#f3e5f5" stroke="#9C27B0" stroke-width="1.5"/>
+  <text x="895" y="97" font-size="11" font-weight="600" text-anchor="middle" fill="#7B1FA2" font-family="Inter, sans-serif">Karonte</text>
 
   <!-- Arrow down to normalization -->
-  <line x1="610" y1="115" x2="725" y2="138" stroke="#999" stroke-width="1"/>
-  <line x1="725" y1="115" x2="725" y2="138" stroke="#999" stroke-width="1"/>
-  <line x1="840" y1="115" x2="725" y2="138" stroke="#999" stroke-width="1"/>
+  <line x1="665" y1="115" x2="780" y2="138" stroke="#999" stroke-width="1"/>
+  <line x1="780" y1="115" x2="780" y2="138" stroke="#999" stroke-width="1"/>
+  <line x1="895" y1="115" x2="780" y2="138" stroke="#999" stroke-width="1"/>
 
-  <rect x="660" y="138" width="130" height="28" rx="4" fill="#e8f5e9" stroke="#4CAF50" stroke-width="1.5"/>
-  <text x="725" y="157" font-size="10" font-weight="600" text-anchor="middle" fill="#2E7D32" font-family="Inter, sans-serif">Normalization Layer</text>
+  <rect x="715" y="138" width="130" height="28" rx="4" fill="#e8f5e9" stroke="#4CAF50" stroke-width="1.5"/>
+  <text x="780" y="157" font-size="10" font-weight="600" text-anchor="middle" fill="#2E7D32" font-family="Inter, sans-serif">Normalization Layer</text>
 
   <!-- Description -->
-  <text x="560" y="186" font-size="11" fill="#555" font-family="Inter, sans-serif">Test normalization layer against different upstream tools.</text>
-  <text x="560" y="198" font-size="11" font-weight="600" fill="#E65100" font-family="Inter, sans-serif">Goal: tool-agnostic validation</text>
+  <text x="780" y="186" font-size="11" text-anchor="middle" fill="#555" font-family="Inter, sans-serif">Test normalization layer against different upstream tools.</text>
+  <text x="780" y="198" font-size="11" font-weight="600" text-anchor="middle" fill="#E65100" font-family="Inter, sans-serif">Goal: tool-agnostic validation</text>
 
   <!-- ===== Experiment 3 ===== -->
   <rect x="15" y="230" width="490" height="40" rx="10" fill="#f3e5f5"/>
